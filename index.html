@@ -20,7 +20,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
         * { font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .aurora-bg { background: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a, #020617); position: relative; }
@@ -152,9 +152,9 @@
                     <div id="win-log" class="flex-1 overflow-y-auto space-y-3 no-scrollbar pr-1">
                         <!-- 中獎明細 -->
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mt-6">
-                        <button onclick="clearAll()" class="py-3 text-[10px] font-black border border-slate-800 rounded-xl text-slate-600 hover:text-rose-500 hover:bg-rose-500/5 transition-all">重置紀錄</button>
-                        <button onclick="exportData()" class="py-3 text-[10px] font-black bg-slate-800 rounded-xl text-slate-300 hover:bg-slate-700 transition-all">匯出 CSV 報表</button>
+                    <!-- 移除匯出 CSV 按鈕，並優化重置紀錄按鈕為美觀的滿版寬度 -->
+                    <div class="mt-6">
+                        <button onclick="clearAll()" class="w-full py-3 text-xs font-black border border-slate-800/80 rounded-xl text-slate-500 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-500/5 transition-all">重置紀錄</button>
                     </div>
                 </div>
             </aside>
@@ -270,17 +270,17 @@
             if(saved) { app.winners = JSON.parse(saved); renderWinners(); }
         };
 
+        // 開關彈出視窗
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
         // --- 錄影功能授權機制 ---
         async function authorizeRecording() {
             try {
                 app.stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { displaySurface: "browser" }, // 優先選擇分享此瀏覽器分頁
+                    video: { displaySurface: "browser" }, 
                     audio: false
                 });
                 
-                // 監聽使用者停止分享事件
                 app.stream.getVideoTracks()[0].addEventListener('ended', () => {
                     app.stream = null;
                     updateRecordUI(false);
@@ -382,13 +382,12 @@
             }
         }
 
-        // --- 抽獎流程 (開始與3秒自動停止) ---
+        // --- 抽獎流程 ---
         function toggleDraw() {
             if(app.drawing) {
                 stopDraw();
             } else {
                 startDraw();
-                // 3 秒後自動呼叫停止常式
                 setTimeout(() => {
                     if (app.drawing) stopDraw();
                 }, 3000);
@@ -399,7 +398,6 @@
             if(!app.participants.length || !app.prize) return showToast('請確認名單與獎項已載入。', 'error');
             app.drawing = true;
             
-            // 如果有授權錄影，啟動 MediaRecorder
             if (app.stream) {
                 app.recordedChunks = [];
                 try {
@@ -420,7 +418,6 @@
                 showToast('目前未開啟螢幕錄製，抽獎將不進行錄影備份。', 'info');
             }
 
-            // 鎖定抽獎按鈕，更改狀態
             const btn = document.getElementById('draw-btn');
             btn.disabled = true;
             btn.className = "w-full py-6 bg-slate-800 text-slate-500 font-black text-2xl rounded-[30px] shadow-none cursor-not-allowed flex items-center justify-center gap-4 transition-all";
@@ -450,11 +447,9 @@
         }
 
         async function stopDraw() {
-            // 1. 先暫停跑馬燈滾動
             clearInterval(app.timer);
             app.drawing = false;
 
-            // 2. 鎖定按鈕，並變更狀態為正在錄製得獎結果
             const btn = document.getElementById('draw-btn');
             btn.disabled = true;
             btn.className = "w-full py-6 bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black text-2xl rounded-[30px] flex items-center justify-center gap-4 transition-all cursor-wait";
@@ -465,7 +460,6 @@
             
             if (winners.length === 0) {
                 showToast('名單抽獎池中沒有合規的人選！', 'error');
-                // 恢復按鈕狀態
                 btn.disabled = false;
                 btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/40 transition-all flex items-center justify-center gap-4 group";
                 document.getElementById('btn-text').innerText = "開始抽獎";
@@ -473,28 +467,25 @@
                 return;
             }
 
-            // 3. 王者誕生 - 立即將巨型黃金得獎卡渲染到舞台上，並產生漫天灑花 (此刻錄影仍在進行中)
             const box = document.getElementById('marquee-box');
             box.innerHTML = `
                 <div class="w-full space-y-3">
-                    <!-- 中獎表頭標題橫欄 -->
                     <div class="grid grid-cols-12 gap-2 px-6 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-black uppercase text-amber-500 tracking-widest">
                         <span class="col-span-4 text-left">👑 中獎者姓名</span>
                         <span class="col-span-4 text-center">💳 身分證字號</span>
                         <span class="col-span-4 text-right">🎫 發票編號</span>
                     </div>
-                    <!-- 得獎名單卡片 -->
                     <div class="space-y-3">
                         ${winners.map(w => `
                             <div class="winner-card grid grid-cols-12 gap-2 items-center p-6 rounded-[25px]">
                                 <div class="col-span-4 text-left">
-                                    <span class="text-3xl font-black text-white tracking-tighter block bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">${mask.name(w.name)}</span>
+                                    <span class="text-4xl md:text-5xl font-black text-white tracking-tighter block bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">${mask.name(w.name)}</span>
                                 </div>
                                 <div class="col-span-4 text-center">
-                                    <span class="text-base font-mono font-bold text-slate-300">${mask.id(w.idNum)}</span>
+                                    <span class="text-xl md:text-2xl font-mono font-bold text-slate-300">${mask.id(w.idNum)}</span>
                                 </div>
                                 <div class="col-span-4 text-right">
-                                    <span class="bg-amber-500 text-slate-950 px-4 py-2 rounded-xl text-sm font-black font-mono inline-block shadow-lg shadow-amber-500/20">${w.invoice}</span>
+                                    <span class="bg-amber-500 text-slate-950 px-5 py-3 rounded-2xl text-base md:text-lg font-black font-mono inline-block shadow-lg shadow-amber-500/20">${w.invoice}</span>
                                 </div>
                             </div>
                         `).join('')}
@@ -505,21 +496,17 @@
             const time = new Date().toLocaleString();
             winners.forEach(w => app.winners.unshift({ ...w, prizeName: app.prize.name, time }));
 
-            // 啟動炫目彩帶特效
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             saveRecords();
             renderWinners();
             app.prize.drawnCount += winners.length;
             syncUI();
 
-            // 4. 設定非同步定時延遲 (Delay) 3.5秒：讓畫面保留在得獎名單與灑花狀態，隨後才停止錄影並上傳！
             setTimeout(() => {
-                // 恢復抽獎按鈕狀態，供下一輪使用
                 btn.disabled = false;
                 btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/40 transition-all flex items-center justify-center gap-4 group";
                 document.getElementById('btn-text').innerText = "開始抽獎";
 
-                // 影片停止錄製並傳送至後端
                 if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
                     showToast('正在生成與壓縮抽獎影片錄影...', 'info');
                     app.mediaRecorder.onstop = async () => {
@@ -535,10 +522,9 @@
                 } else {
                     uploadAndRecord(winners, time, null);
                 }
-            }, 3500); // 延遲 3.5 秒錄製完整中獎動畫
+            }, 3500);
         }
 
-        // 打包發送 POST 請求給 GAS
         function uploadAndRecord(winners, time, videoBase64) {
             if(app.gasUrl) {
                 const cleanUrl = getCleanUrl(app.gasUrl);
@@ -549,7 +535,7 @@
                         prizeId: app.prize.id, 
                         prizeName: app.prize.name,
                         winners: winners.map(w => ({ ...w, prizeName: app.prize.name, time })),
-                        videoBase64: videoBase64 // 前端轉換完成的錄影資料
+                        videoBase64: videoBase64 
                     })
                 }).then(() => {
                     showToast('中獎數據已自動上傳並寫入雲端試算表！', 'success');
@@ -613,7 +599,17 @@
             renderWinners();
             if(app.gasUrl) {
                 const cleanUrl = getCleanUrl(app.gasUrl);
-                fetch(`${cleanUrl}?action=clearWinners`, { method: 'POST', mode: 'no-cors' });
+                // 關鍵修復：主動傳送空 JSON Body 防止 Google Apps Script parsing 報錯
+                fetch(`${cleanUrl}?action=clearWinners`, { 
+                    method: 'POST', 
+                    mode: 'no-cors',
+                    body: JSON.stringify({})
+                });
+            }
+            // 同步更新本地端獎項的已抽出數量，讓選單與舞台立即歸零與更新
+            if (app.prizes) {
+                app.prizes.forEach(p => p.drawnCount = 0);
+                updatePrizeUI();
             }
             closeConfirmModal();
             showToast('中獎歷史紀錄與雲端數據已成功重置！', 'success');
@@ -625,16 +621,6 @@
                 clean = clean.split('?')[0];
             }
             return clean;
-        }
-
-        function exportData() {
-            let csv = "\uFEFF中獎時間,獎項名稱,得獎者,身分證字號,聯絡資訊,發票編號,電子信箱\n";
-            app.winners.forEach(w => csv += `"${w.time}","${w.prizeName}","${w.name}","${w.idNum}","${w.phone}","${w.invoice}","${w.email}"\n`);
-            const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const l = document.createElement("a");
-            l.href = URL.createObjectURL(b);
-            l.download = `中獎報表_${new Date().toISOString().slice(0,10)}.csv`;
-            l.click();
         }
     </script>
 </body>
