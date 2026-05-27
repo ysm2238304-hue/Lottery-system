@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURORA DRAW - 極光智慧抽獎 PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f3ff', 100: '#e1e7ff', 200: '#cbd5ff', 300: '#a3b4ff', 400: '#7a8bff', 500: '#4f5eff', 600: '#3b40ff', 700: '#2c2aff', 800: '#2521cc', 900: '#2220a3' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        * { font-family: 'Noto Sans TC', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .aurora-bg { background: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a, #020617); }
+        .marquee-card { transition: all 0.15s ease-in-out; }
+        @keyframes glow { 0% { box-shadow: 0 0 5px rgba(79, 94, 255, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 94, 255, 0.5); } }
+        .winner-glow { animation: glow 2s ease-in-out infinite alternate; }
+    </style>
+</head>
+<body class="aurora-bg text-slate-100 min-h-full font-sans antialiased">
+
+    <!-- Toast 訊息容器 -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+    <div class="max-w-[1600px] mx-auto p-4 lg:p-8 flex flex-col gap-6 min-h-screen">
+        
+        <!-- 頂部標題列 -->
+        <header class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-brand-500/10 rounded-xl border border-brand-500/30 text-brand-400">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wider text-white">AURORA DRAW <span class="text-brand-500 text-sm ml-2 font-black">智慧抽獎專業版</span></h1>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest">個資遮蔽技術 · 七欄位雲端同步</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-slate-900/80 border border-slate-800 p-2 rounded-xl backdrop-blur-md">
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+                    <span id="connection-dot" class="h-2 w-2 rounded-full bg-slate-500"></span>
+                    <span id="connection-text" class="text-slate-400 font-medium font-bold text-slate-500">尚未連線</span>
+                </div>
+                <button onclick="toggleSettingsModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all">
+                    <i data-lucide="settings" class="w-4.5 h-4.5"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start flex-1">
+            
+            <!-- 左側設定區塊 -->
+            <section class="xl:col-span-4 flex flex-col gap-6">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-brand-400"></i>
+                            <h2 class="font-semibold text-base">抽獎名單 (僅顯示主要資訊)</h2>
+                        </div>
+                        <span id="count-tag" class="text-[10px] px-2 py-1 bg-slate-800 rounded-md text-slate-400 font-bold">0 筆資料</span>
+                    </div>
+                    <!-- 輸入框顯示：姓名,身分證,發票 -->
+                    <textarea id="raw-input" class="w-full h-48 bg-slate-950 border border-slate-800 focus:border-brand-500 rounded-xl p-3 text-xs font-mono text-slate-400 focus:outline-none no-scrollbar" placeholder="請填入：姓名,身分證,發票..."></textarea>
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <button onclick="loadSample()" class="py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg border border-slate-700 hover:bg-slate-700 transition-all">範例載入</button>
+                        <button onclick="parseInput()" class="py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-500 transition-all">套用名單</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="gift" class="w-5 h-5 text-brand-400"></i>
+                        <h2 class="font-semibold text-base">獎項規則配置</h2>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 uppercase font-bold mb-1.5">抽選獎項</label>
+                            <div class="flex gap-2">
+                                <select id="prize-select" onchange="syncStage()" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none"></select>
+                                <button onclick="syncGas()" class="p-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-bold mb-1.5">單次抽選人數</label>
+                                <input type="number" id="draw-num" value="1" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-bold mb-1.5">重複中獎過濾</label>
+                                <div class="flex items-center h-9">
+                                    <input type="checkbox" id="filter-dup" checked class="w-4 h-4 rounded border-slate-800 bg-slate-950 text-brand-500 focus:ring-brand-500">
+                                    <span class="ml-2 text-xs text-slate-400">過濾已得獎者</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 中間抽獎舞台 -->
+            <section class="xl:col-span-5 flex flex-col gap-6">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl min-h-[550px] flex flex-col items-center justify-between shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-brand-500/50 to-transparent"></div>
+                    
+                    <div class="text-center z-10">
+                        <div id="p-tag" class="inline-block px-3 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-400 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4">系統就緒</div>
+                        <h2 id="p-name" class="text-2xl font-bold text-white tracking-tight">請載入獎項與名單</h2>
+                    </div>
+
+                    <!-- 電子看板滾動區 -->
+                    <div id="stage-area" class="w-full flex flex-col gap-3 py-8 z-10 max-h-[320px] overflow-y-auto no-scrollbar">
+                        <div class="text-slate-600 text-sm text-center italic opacity-50">準備進行智慧抽獎運算...</div>
+                    </div>
+
+                    <div class="w-full z-10">
+                        <button id="main-btn" onclick="handleDraw()" class="w-full py-5 bg-gradient-to-br from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-xl rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase italic">
+                            <i data-lucide="play" class="w-6 h-6 fill-current"></i> 開始抽獎
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 右側紀錄區 -->
+            <section class="xl:col-span-3 flex flex-col h-[680px]">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 backdrop-blur-md flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h2 class="font-black text-xs flex items-center gap-2 uppercase tracking-tighter text-amber-500">
+                            <i data-lucide="award" class="w-4 h-4"></i> 中獎紀錄看板
+                        </h2>
+                        <span id="win-count" class="text-[10px] font-bold text-slate-500 uppercase">0 人中獎</span>
+                    </div>
+                    <div id="win-list" class="flex-1 overflow-y-auto space-y-2 no-scrollbar"></div>
+                    <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800">
+                        <button onclick="clearWins()" class="py-2 text-[10px] font-bold border border-slate-800 rounded-lg text-slate-600 hover:text-rose-400 transition-all">重設紀錄</button>
+                        <button onclick="exportCSV()" class="py-2 text-[10px] font-bold bg-slate-800 rounded-lg text-slate-300 hover:bg-slate-700 transition-all">匯出 CSV</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 設定彈窗 -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+            <h3 class="text-xl font-black mb-6 flex items-center gap-3 uppercase tracking-tighter"><i data-lucide="link" class="text-brand-400"></i> 雲端試算表連線設定</h3>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Google Apps Script 應用程式網址</label>
+                    <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-blue-400 font-mono focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="syncGas()" class="py-3 bg-slate-800 text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-700 uppercase">測試並同步</button>
+                    <button onclick="toggleSettingsModal()" class="py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-500 uppercase">儲存變更</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 確認清除中獎紀錄自訂彈窗 -->
+    <div id="confirm-clear-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-12 h-12 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-100 mb-2">確定清除中獎紀錄？</h3>
+            <p class="text-xs text-slate-400 mb-6">此動作將一併重置雲端配置與本地端儲存的所有得獎資料，且無法復原。</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700 transition-all">取消</button>
+                <button onclick="executeClear()" class="flex-1 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-500 transition-all">確認重置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 訊息提示引擎 (Toast Helper) ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 border transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+            
+            if (type === 'success') {
+                toast.className += ' bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+                toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> <span>${message}</span>`;
+            } else if (type === 'error') {
+                toast.className += ' bg-rose-500/10 border-rose-500/30 text-rose-400';
+                toast.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i> <span>${message}</span>`;
+            } else {
+                toast.className += ' bg-slate-800 border-slate-700 text-slate-300';
+                toast.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i> <span>${message}</span>`;
+            }
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            // 動畫移入
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+            
+            // 3秒後移除
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-10px]', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- 繁體隱碼工具 (Privacy Helper) ---
+        const mask = {
+            name: (s) => (s && s.length >= 2) ? s[0] + "*" + (s.length > 2 ? s[s.length-1] : "") : s,
+            id: (s) => s ? s.substring(0,3) + "****" + s.substring(s.length-2) : "***",
+            phone: (s) => s ? s.substring(0,4) + "***" + s.substring(s.length-3) : "***",
+            email: (s) => s ? s.split('@')[0][0] + "***@" + s.split('@')[1] : "***"
+        };
+
+        // --- 全域狀態管理 ---
+        let app = {
+            participants: [], // 完整個資池 (包含電話、Email、權重)
+            prizes: [],
+            winners: [],
+            // 預先寫入您最新的部署 GAS 應用程式網址
+            gasUrl: localStorage.getItem('aurora_final_gas') || 'https://script.google.com/macros/s/AKfycbwSZNog_mZu6RD3LnNiPB99RU5pNzAwzERQQEC7-qYNigKnDnKY2JQKgLBr9Em-0WOB/exec',
+            drawing: false,
+            timer: null,
+            selectedPrize: null
+        };
+
+        window.onload = () => {
+            lucide.createIcons();
+            document.getElementById('gas-url').value = app.gasUrl;
+            if(app.gasUrl) syncGas(true);
+            loadLocalRecords();
+        };
+
+        function toggleSettingsModal() { document.getElementById('settings-modal').classList.toggle('hidden'); }
+
+        // --- 範例與同步 ---
+        function loadSample() {
+            document.getElementById('raw-input').value = "陳阿寶,A123456789,INV1001\n王大同,C123456789,INV1002\n張小華,B123456789,INV1003";
+        }
+
+        function parseInput() {
+            const lines = document.getElementById('raw-input').value.trim().split('\n');
+            app.participants = lines.filter(l => l.trim()).map(line => {
+                const cols = line.split(',');
+                return {
+                    name: cols[0]?.trim() || '',
+                    idNum: cols[1]?.trim() || '',
+                    invoice: cols[2]?.trim() || '',
+                    phone: '', email: '', weight: 1, note: '' // 本地預設值
+                };
+            });
+            document.getElementById('count-tag').innerText = `${app.participants.length} 筆資料`;
+            showToast('本地名單套用成功！', 'success');
+        }
+
+        async function syncGas(silent = false) {
+            const url = document.getElementById('gas-url').value.trim();
+            if(!url) return;
+            app.gasUrl = url;
+            localStorage.setItem('aurora_final_gas', url);
+
+            try {
+                const res = await fetch(`${url}?action=getData`);
+                const json = await res.json();
+                if(json.status === 'success') {
+                    app.prizes = json.prizes;
+                    app.participants = json.participants;
+                    // 顯示層：僅顯示姓名, 身分證, 發票
+                    document.getElementById('raw-input').value = app.participants.map(p => `${p.name},${p.idNum},${p.invoice}`).join('\n');
+                    updatePrizeSelect();
+                    updateConnectionUI(true);
+                    if(!silent) showToast('雲端資料同步完成！', 'success');
+                }
+            } catch(e) {
+                updateConnectionUI(false);
+                if(!silent) showToast('與 Google 雲端連線失敗', 'error');
+            }
+        }
+
+        function updateConnectionUI(ok) {
+            const dot = document.getElementById('connection-dot');
+            const txt = document.getElementById('connection-text');
+            dot.className = ok ? 'h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'h-2 w-2 rounded-full bg-rose-500';
+            txt.innerText = ok ? '已連接雲端' : '連線異常';
+            txt.className = ok ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
+        }
+
+        function updatePrizeSelect() {
+            const select = document.getElementById('prize-select');
+            select.innerHTML = app.prizes.map(p => `<option value="${p.id}">${p.name} (剩 ${p.count - p.drawnCount})</option>`).join('');
+            syncStage();
+        }
+
+        function syncStage() {
+            const id = document.getElementById('prize-select').value;
+            app.selectedPrize = app.prizes.find(p => p.id == id);
+            if(app.selectedPrize) {
+                document.getElementById('p-name').innerText = app.selectedPrize.name;
+                document.getElementById('p-tag').innerText = `已抽出: ${app.selectedPrize.drawnCount} / 總額: ${app.selectedPrize.count}`;
+            }
+        }
+
+        // --- 抽獎運算 ---
+        function handleDraw() { if(app.drawing) stopDrawing(); else startDrawing(); }
+
+        function startDrawing() {
+            if(!app.participants.length) return showToast('請先載入或同步名單資料', 'error');
+            if(!app.selectedPrize) return showToast('請選擇要抽選的獎項', 'error');
+            
+            app.drawing = true;
+            document.getElementById('main-btn').innerHTML = `<i data-lucide="square" class="w-6 h-6 fill-current"></i> 停止滾動`;
+            document.getElementById('main-btn').className = "w-full py-5 bg-rose-600 text-white font-black text-xl rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 italic";
+            lucide.createIcons();
+
+            const num = parseInt(document.getElementById('draw-num').value) || 1;
+            const stage = document.getElementById('stage-area');
+            stage.innerHTML = '';
+            
+            const cards = [];
+            for(let i=0; i<num; i++) {
+                const div = document.createElement('div');
+                div.className = "bg-slate-950 border border-slate-800 rounded-2xl py-4 px-6 flex justify-between items-center text-xl font-bold text-brand-400 marquee-card";
+                div.innerHTML = `<span>抽獎中...</span><span class="text-[10px] text-slate-600">ID MASKED</span>`;
+                stage.appendChild(div);
+                cards.push(div);
+            }
+
+            app.timer = setInterval(() => {
+                cards.forEach(card => {
+                    const r = app.participants[Math.floor(Math.random()*app.participants.length)];
+                    // 顯示遮蔽姓名與遮蔽身分證
+                    card.innerHTML = `<span>${mask.name(r.name)}</span><span class="text-[10px] text-slate-500 font-mono">${mask.id(r.idNum)}</span>`;
+                });
+            }, 80);
+        }
+
+        async function stopDrawing() {
+            clearInterval(app.timer);
+            app.drawing = false;
+            document.getElementById('main-btn').innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-current"></i> 開始抽獎`;
+            document.getElementById('main-btn').className = "w-full py-5 bg-gradient-to-br from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-xl rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 italic";
+            lucide.createIcons();
+
+            const num = parseInt(document.getElementById('draw-num').value) || 1;
+            const winners = performWeightedDraw(num);
+            
+            if(!winners.length) return showToast('找不到符合抽獎資格的對象', 'error');
+
+            // 展示結果：遮蔽姓名與發票編號
+            const stage = document.getElementById('stage-area');
+            stage.innerHTML = winners.map(w => `
+                <div class="bg-brand-500/10 border-2 border-brand-500 rounded-2xl py-5 px-6 flex justify-between items-center winner-glow">
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-black text-white">${mask.name(w.name)}</span>
+                        <span class="text-[10px] text-brand-400 font-mono font-bold">${w.invoice}</span>
+                    </div>
+                    <div class="bg-brand-500 text-white px-3 py-1 rounded-full text-[10px] font-black italic">恭喜中獎</div>
+                </div>
+            `).join('');
+
+            const ts = new Date().toLocaleString();
+            winners.forEach(w => {
+                app.winners.unshift({ ...w, prizeName: app.selectedPrize.name, timestamp: ts });
+            });
+
+            // 回傳 GAS：傳送完整資料 (raw-data)
+            if(app.gasUrl) {
+                fetch(`${app.gasUrl}?action=recordWinners`, {
+                    method: 'POST', mode: 'no-cors',
+                    body: JSON.stringify({ prizeId: app.selectedPrize.id, winners: winners.map(w => ({ ...w, prizeName: app.selectedPrize.name, timestamp: ts })) })
+                });
+            }
+
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            saveLocalRecords();
+            renderWinners();
+            app.selectedPrize.drawnCount += winners.length;
+            syncStage();
+        }
+
+        function performWeightedDraw(count) {
+            let pool = [...app.participants];
+            if(document.getElementById('filter-dup').checked) {
+                const wonInvoices = app.winners.map(w => w.invoice);
+                pool = pool.filter(p => !wonInvoices.includes(p.invoice));
+            }
+            if(!pool.length) return [];
+            let res = [];
+            const drawSize = Math.min(count, pool.length);
+            for(let i=0; i<drawSize; i++) {
+                let total = pool.reduce((s, p) => s + p.weight, 0);
+                let rand = Math.random() * total;
+                for(let j=0; j<pool.length; j++) {
+                    rand -= pool[j].weight;
+                    if(rand <= 0) { res.push(pool[j]); pool.splice(j, 1); break; }
+                }
+            }
+            return res;
+        }
+
+        // --- 資料持久化 ---
+        function saveLocalRecords() { localStorage.setItem('aurora_final_pro_winners', JSON.stringify(app.winners)); }
+        function loadLocalRecords() {
+            const data = localStorage.getItem('aurora_final_pro_winners');
+            if(data) { app.winners = JSON.parse(data); renderWinners(); }
+        }
+
+        function renderWinners() {
+            const list = document.getElementById('win-list');
+            document.getElementById('win-count').innerText = `${app.winners.length} 人中獎`;
+            // 看板僅顯示遮蔽姓名與發票
+            list.innerHTML = app.winners.map(w => `
+                <div class="bg-slate-950/60 border border-slate-800 p-3 rounded-xl hover:border-brand-500 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[9px] bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">${w.prizeName}</span>
+                        <span class="text-[8px] text-slate-600 font-mono">${w.timestamp.split(' ')[1]}</span>
+                    </div>
+                    <div class="text-sm font-black text-slate-200 tracking-tighter">${mask.name(w.name)}</div>
+                    <div class="text-[9px] text-slate-500 font-bold mt-0.5 font-mono">${w.invoice}</div>
+                </div>
+            `).join('');
+        }
+
+        // --- 自訂確認彈窗邏輯 ---
+        function clearWins() {
+            document.getElementById('confirm-clear-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-clear-modal').classList.add('hidden');
+        }
+
+        function executeClear() {
+            app.winners = [];
+            saveLocalRecords();
+            renderWinners();
+            if(app.gasUrl) {
+                fetch(`${app.gasUrl}?action=clearWinners`, { method: 'POST', mode: 'no-cors' });
+            }
+            closeConfirmModal();
+            showToast('中獎歷史紀錄已重置成功', 'success');
+        }
+
+        function exportCSV() {
+            let csv = "\uFEFF中獎時間,獎項名稱,得獎者,身分證字號,聯絡資訊,發票號碼,電子信箱\n";
+            app.winners.forEach(w => csv += `"${w.timestamp}","${w.prizeName}","${w.name}","${w.idNum}","${w.phone}","${w.invoice}","${w.email}"\n`);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `中獎報表_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
