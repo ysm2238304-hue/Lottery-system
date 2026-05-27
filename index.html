@@ -67,7 +67,7 @@
 
         <!-- 經典三分欄 -->
         <main class="grid grid-cols-12 gap-8 flex-1 min-h-0">
-            <!-- 左側分欄：數據名單庫 (已移除文字編輯，純化名單預覽) -->
+            <!-- 左側分欄：數據名單庫 -->
             <aside class="col-span-3 flex flex-col gap-6 overflow-y-auto no-scrollbar">
                 <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md flex flex-col flex-1 min-h-0">
                     <div class="flex items-center justify-between mb-4">
@@ -310,7 +310,7 @@
             }
         }
 
-        // --- 渲染名單預覽 (包含直覺標題橫欄) ---
+        // --- 渲染名單預覽 ---
         function renderPreviewList() {
             const list = document.getElementById('preview-list');
             const search = document.getElementById('preview-search').value.toLowerCase().trim();
@@ -450,25 +450,30 @@
         }
 
         async function stopDraw() {
+            // 1. 先暫停跑馬燈滾動
             clearInterval(app.timer);
             app.drawing = false;
 
-            // 恢復抽獎按鈕
+            // 2. 鎖定按鈕，並變更狀態為正在錄製得獎結果
             const btn = document.getElementById('draw-btn');
-            btn.disabled = false;
-            btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/40 transition-all flex items-center justify-center gap-4 group";
-            document.getElementById('btn-text').innerText = "開始抽獎";
+            btn.disabled = true;
+            btn.className = "w-full py-6 bg-amber-500/10 border border-amber-500/30 text-amber-500 font-black text-2xl rounded-[30px] flex items-center justify-center gap-4 transition-all cursor-wait";
+            document.getElementById('btn-text').innerText = "得獎畫面錄製存證中 (3.5秒)...";
 
             const num = parseInt(document.getElementById('draw-num').value) || 1;
             const winners = pickWinners(num);
             
             if (winners.length === 0) {
                 showToast('名單抽獎池中沒有合規的人選！', 'error');
+                // 恢復按鈕狀態
+                btn.disabled = false;
+                btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/40 transition-all flex items-center justify-center gap-4 group";
+                document.getElementById('btn-text').innerText = "開始抽獎";
                 if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') app.mediaRecorder.stop();
                 return;
             }
 
-            // 王者誕生 - 巨型黃金中獎卡 (姓名、身分證、發票 垂直三大欄位黃金重構)
+            // 3. 王者誕生 - 立即將巨型黃金得獎卡渲染到舞台上，並產生漫天灑花 (此刻錄影仍在進行中)
             const box = document.getElementById('marquee-box');
             box.innerHTML = `
                 <div class="w-full space-y-3">
@@ -500,28 +505,37 @@
             const time = new Date().toLocaleString();
             winners.forEach(w => app.winners.unshift({ ...w, prizeName: app.prize.name, time }));
 
+            // 啟動炫目彩帶特效
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             saveRecords();
             renderWinners();
             app.prize.drawnCount += winners.length;
             syncUI();
 
-            // 影片停止錄製並傳送至後端
-            if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
-                showToast('正在生成與壓縮抽獎影片錄影...', 'info');
-                app.mediaRecorder.onstop = async () => {
-                    const blob = new Blob(app.recordedChunks, { type: 'video/webm' });
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = () => {
-                        const base64data = reader.result.split(',')[1];
-                        uploadAndRecord(winners, time, base64data);
+            // 4. 設定非同步定時延遲 (Delay) 3.5秒：讓畫面保留在得獎名單與灑花狀態，隨後才停止錄影並上傳！
+            setTimeout(() => {
+                // 恢復抽獎按鈕狀態，供下一輪使用
+                btn.disabled = false;
+                btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/40 transition-all flex items-center justify-center gap-4 group";
+                document.getElementById('btn-text').innerText = "開始抽獎";
+
+                // 影片停止錄製並傳送至後端
+                if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
+                    showToast('正在生成與壓縮抽獎影片錄影...', 'info');
+                    app.mediaRecorder.onstop = async () => {
+                        const blob = new Blob(app.recordedChunks, { type: 'video/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = () => {
+                            const base64data = reader.result.split(',')[1];
+                            uploadAndRecord(winners, time, base64data);
+                        };
                     };
-                };
-                app.mediaRecorder.stop();
-            } else {
-                uploadAndRecord(winners, time, null);
-            }
+                    app.mediaRecorder.stop();
+                } else {
+                    uploadAndRecord(winners, time, null);
+                }
+            }, 3500); // 延遲 3.5 秒錄製完整中獎動畫
         }
 
         // 打包發送 POST 請求給 GAS
@@ -535,7 +549,7 @@
                         prizeId: app.prize.id, 
                         prizeName: app.prize.name,
                         winners: winners.map(w => ({ ...w, prizeName: app.prize.name, time })),
-                        videoBase64: videoBase64 // 前端轉換完成的 mp4/webm 錄影資料
+                        videoBase64: videoBase64 // 前端轉換完成的錄影資料
                     })
                 }).then(() => {
                     showToast('中獎數據已自動上傳並寫入雲端試算表！', 'success');
