@@ -337,7 +337,14 @@
                 if (!res.ok) {
                     throw new Error(`HTTP 錯誤! 狀態碼: ${res.status}`);
                 }
-                const json = await res.json();
+                
+                // 【偵錯防禦機制升級】：先取出純文字檢查，避免 Unexpected token '<' 拋出無用錯誤
+                const rawText = await res.text();
+                if (rawText.trim().startsWith('<')) {
+                    throw new Error("伺服器回傳了 HTML 網頁而非 JSON 資料。這代表 Google Apps Script 的存取權限並未公開（例如「誰有權存取」未設為「任何人」），導致連線被導向了登入畫面。請至 GAS 重新發布部署！");
+                }
+                
+                const json = JSON.parse(rawText);
                 if(json.status === 'success') {
                     app.prizes = json.prizes;
                     app.participants = json.participants;
