@@ -157,7 +157,7 @@
             <h3 class="text-xl font-black mb-6 flex items-center gap-3 uppercase tracking-tighter"><i data-lucide="link" class="text-brand-400"></i> 雲端試算表連線設定</h3>
             <div class="space-y-5" id="settings-form">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Google Apps Script 應用程式網址</label>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Google Apps Script 應用程式網址 (Web App URL)</label>
                     <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-blue-400 font-mono focus:outline-none focus:border-brand-500">
                 </div>
                 
@@ -168,8 +168,8 @@
                         <i data-lucide="chevron-down" id="troubleshoot-icon" class="w-4 h-4 transition-transform duration-200"></i>
                     </button>
                     <div id="troubleshoot-guide" class="hidden mt-3 text-[11px] text-slate-400 space-y-2.5 leading-relaxed border-t border-slate-800 pt-3 text-left">
-                        <p><strong class="text-rose-400">⚠️ 網址類型檢查</strong>：請勿使用包含 <strong class="text-rose-300 font-mono">/dev</strong> 的測試網址。這需要 Google 帳號授權登入，在抽獎程式中一定會被 CORS 安全機制阻擋。請使用包含 <strong class="text-emerald-400 font-mono">/exec</strong> 的正式部署網址！</p>
-                        <p><strong class="text-amber-400">❶ 權限未設為公開</strong>：請在 Google Apps Script 部署設定中，將「誰可以存取 (Who has access)」設定為 <strong class="text-slate-200">「任何人 (Anyone)」</strong>。如果設為「僅限自己」或「任何擁有 Google 帳戶的人」，瀏覽器會因安全保護而直接封鎖連線。</p>
+                        <p><strong class="text-rose-400">⚠️ 請勿貼上試算表網址</strong>：本欄位需要的是包含 <strong class="text-emerald-400 font-mono">/exec</strong> 結尾的 GAS 網頁應用程式網址，<strong class="text-rose-400">而非</strong>您在 Google Sheet 頂部複製的試算表編輯網址 (<strong class="text-rose-300">docs.google.com/spreadsheets...</strong>)！</p>
+                        <p><strong class="text-amber-400">❶ 權限未設為公開 (最常見原因)</strong>：請在 Google Apps Script 部署設定中，將「誰可以存取 (Who has access)」設定為 <strong class="text-slate-200">「任何人 (Anyone)」</strong>。如果設為「僅限自己」，瀏覽器會因安全保護而直接封鎖連線。</p>
                         <p><strong class="text-amber-400">❷ 未進行首次授權執行</strong>：請在 GAS 編輯器上方選擇 <strong class="text-slate-200">`setupDatabase`</strong> 函數並點擊 <strong class="text-slate-200">「執行」</strong>，通過 Google 的安全授權審查（點擊進階 -> 前往執行）。</p>
                         <p><strong class="text-amber-400">❸ 部署版本快取未更新</strong>：每次修改 GAS 程式碼後，您必須點擊 <strong class="text-slate-200">「部署 > 管理部署」</strong>，點按鉛筆編輯，在版本選單中選擇 <strong class="text-slate-200">「新版本」</strong> 並重新部署，只點儲存是不會生效的！</p>
                     </div>
@@ -244,7 +244,7 @@
             participants: [], // 完整個資池 (包含電話、Email、權重)
             prizes: [],
             winners: [],
-            // 預先寫入您最新的部署 GAS 應用程式網址
+            // 預先寫入您最新的部署 GAS 應用程式網址 (Web App)
             gasUrl: localStorage.getItem('aurora_final_gas') || 'https://script.google.com/macros/s/AKfycbwSZNog_mZu6RD3LnNiPB99RU5pNzAwzERQQEC7-qYNigKnDnKY2JQKgLBr9Em-0WOB/exec',
             drawing: false,
             timer: null,
@@ -312,7 +312,16 @@
 
             updateConnectionUI(false, '正在連接...');
 
-            // 自動防呆分析 1: 檢查是否誤用了 /dev 測試網址
+            // 自動防呆分析 1: 檢查是否誤用了 Google Sheet 的試算表編輯網址 (docs.google.com/spreadsheets)
+            if (url.toLowerCase().includes('docs.google.com') || url.toLowerCase().includes('spreadsheets')) {
+                updateConnectionUI(false, '網址類型錯誤');
+                if(!silent) {
+                    showToast('⚠️ 偵測到您貼入的是「Google 試算表編輯網址」！本系統需要填入您於 Apps Script 部署後的 Web App 網址（網址含有 /exec 結尾）。請點選右上角設定齒輪並查看「遇到 Failed to fetch 說明」。', 'error');
+                }
+                return;
+            }
+
+            // 自動防呆分析 2: 檢查是否誤用了 /dev 測試網址
             if (url.toLowerCase().includes('/dev')) {
                 updateConnectionUI(false, '網址類型錯誤');
                 if(!silent) {
@@ -455,6 +464,7 @@
             syncStage();
         }
 
+        // 權重抽獎演算法
         function performWeightedDraw(count) {
             let pool = [...app.participants];
             if(document.getElementById('filter-dup').checked) {
