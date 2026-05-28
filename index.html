@@ -156,15 +156,39 @@
     <!-- 系統設定彈窗 -->
     <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/30">
         <div class="bg-white border border-slate-200 rounded-[40px] p-10 max-w-lg w-full shadow-3xl">
-            <h3 class="text-2xl font-black mb-8 text-slate-950 uppercase tracking-tighter">系統整合設定</h3>
+            <h3 class="text-2xl font-black mb-6 text-slate-950 uppercase tracking-tighter">系統整合設定</h3>
             <div class="space-y-6">
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-500">Google Apps Script 應用程式網址</label>
                     <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 text-sm text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white transition-all font-mono">
                 </div>
+
+                <!-- 借鏡專業抽獎平台：新增進階抽獎規則 Feature Toggles 控制面版 -->
+                <div class="border-t border-slate-200 pt-4 space-y-3">
+                    <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">進階規則配置 (Feature Toggles)</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="cross-exclude-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-700">跨獎項完全排除中獎者</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="fast-mode-check" class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-700">快速模式 (跳過動畫)</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="sound-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-700">啟用抽獎音效 (Drum/Tada)</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="serial-number-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-xs font-bold text-slate-700">得獎名單顯示 No. 流水號</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="syncGas()" class="py-4 bg-slate-100 text-slate-700 text-sm font-black rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all">測試與同步</button>
-                    <button onclick="toggleModal('settings-modal')" class="py-4 bg-brand-600 text-white text-sm font-black rounded-2xl hover:bg-brand-500 transition-all">確認並儲存</button>
+                    <button onclick="saveSettings()" class="py-4 bg-brand-600 text-white text-sm font-black rounded-2xl hover:bg-brand-500 transition-all">確認並儲存</button>
                 </div>
             </div>
         </div>
@@ -186,6 +210,57 @@
     </div>
 
     <script>
+        // --- 智慧音效合成引擎 (Web Audio API Synthesizer) ---
+        // 100% 離線可用，免去外部音源檔案加載失敗的痛點
+        const audio = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playTick() {
+                if (!document.getElementById('sound-check').checked) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(650, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.04);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.04);
+                } catch(e) {}
+            },
+            playTada() {
+                if (!document.getElementById('sound-check').checked) return;
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const playNote = (freq, delay, duration, vol) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + delay);
+                        gain.gain.setValueAtTime(vol, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + duration);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + duration);
+                    };
+                    // C5 經典大和弦得獎號角旋律
+                    playNote(523.25, 0, 0.12, 0.12); // C5
+                    playNote(659.25, 0.05, 0.12, 0.12); // E5
+                    playNote(783.99, 0.1, 0.12, 0.12); // G5
+                    playNote(1046.50, 0.18, 0.7, 0.16); // C6 延長音
+                } catch(e) {}
+            }
+        };
+
         // --- 訊息提示引擎 (Toast Helper) ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -264,12 +339,36 @@
         window.onload = () => {
             lucide.createIcons();
             document.getElementById('gas-url').value = app.gasUrl;
+            
+            // 載入 localStorage 進階規則狀態
+            document.getElementById('cross-exclude-check').checked = localStorage.getItem('cfg_cross_exclude') !== 'false';
+            document.getElementById('fast-mode-check').checked = localStorage.getItem('cfg_fast_mode') === 'true';
+            document.getElementById('sound-check').checked = localStorage.getItem('cfg_sound') !== 'false';
+            document.getElementById('serial-number-check').checked = localStorage.getItem('cfg_serial') !== 'false';
+
             if(app.gasUrl) syncGas(true);
             const saved = localStorage.getItem('aurora_v2_winners');
             if(saved) { app.winners = JSON.parse(saved); renderWinners(); }
         };
 
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+        // --- 儲存彈窗設定 & 自動備份 ---
+        function saveSettings() {
+            localStorage.setItem('cfg_cross_exclude', document.getElementById('cross-exclude-check').checked);
+            localStorage.setItem('cfg_fast_mode', document.getElementById('fast-mode-check').checked);
+            localStorage.setItem('cfg_sound', document.getElementById('sound-check').checked);
+            localStorage.setItem('cfg_serial', document.getElementById('serial-number-check').checked);
+            
+            const urlInput = document.getElementById('gas-url').value.trim();
+            if(urlInput) {
+                app.gasUrl = urlInput;
+                localStorage.setItem('aurora_v2_gas', urlInput);
+                syncGas(true);
+            }
+            toggleModal('settings-modal');
+            showToast('進階規則與配置已成功儲存！', 'success');
+        }
 
         // --- 錄影功能授權機制 ---
         async function authorizeRecording() {
@@ -407,9 +506,16 @@
                 stopDraw();
             } else {
                 startDraw();
-                setTimeout(() => {
-                    if (app.drawing) stopDraw();
-                }, 3000);
+                
+                // 智慧自適應：若開啟快速模式 (Fast Mode)，直接跳過動畫定格
+                const isFastMode = document.getElementById('fast-mode-check').checked;
+                if (isFastMode) {
+                    stopDraw();
+                } else {
+                    setTimeout(() => {
+                        if (app.drawing) stopDraw();
+                    }, 3000);
+                }
             }
         }
 
@@ -440,7 +546,7 @@
             const btn = document.getElementById('draw-btn');
             btn.disabled = true;
             btn.className = "w-full py-6 bg-slate-200 text-slate-400 font-black text-2xl rounded-[30px] shadow-none cursor-not-allowed flex items-center justify-center gap-4 transition-all border border-slate-300/60";
-            document.getElementById('btn-text').innerText = "正在抽選中 (3秒後自動停止)...";
+            document.getElementById('btn-text').innerText = "正在抽選中...";
             
             const num = parseInt(document.getElementById('draw-num').value) || 1;
             const box = document.getElementById('marquee-box');
@@ -453,6 +559,9 @@
             }
 
             app.timer = setInterval(() => {
+                // 跑馬燈滾動音效
+                audio.playTick();
+
                 cards.forEach(c => {
                     const p = app.participants[Math.floor(Math.random()*app.participants.length)];
                     
@@ -492,20 +601,24 @@
             const box = document.getElementById('marquee-box');
             const gridClass = `grid grid-cols-${app.activeColumnCount} gap-4`;
 
-            // 2. 動態生成精簡且單行不折行得獎表頭 (對標 layout_optimization_plan.md)
+            // 動態生成精簡且單行不折行得獎表頭
             let headerHtml = `<div class="${gridClass} px-6 py-4 bg-amber-100/50 border border-amber-200 rounded-xl text-sm md:text-base font-black uppercase text-amber-700 tracking-wider shadow-sm">`;
             if (app.activeFields.name)    headerHtml += `<span class="text-left whitespace-nowrap">👑 得獎者</span>`;
             if (app.activeFields.idNum)   headerHtml += `<span class="text-center whitespace-nowrap">💳 身分證號</span>`;
             if (app.activeFields.invoice) headerHtml += `<span class="text-right whitespace-nowrap">🎫 發票號碼</span>`;
             headerHtml += `</div>`;
 
-            // 3. 動態生成「中獎人卡片」HTML
-            const listHtml = winners.map(w => {
+            // 是否啟用 No. 流水號顯示
+            const isSerialNumEnabled = document.getElementById('serial-number-check').checked;
+
+            // 動態生成「中獎人卡片」HTML
+            const listHtml = winners.map((w, idx) => {
                 let cardRows = `<div class="winner-card ${gridClass} items-center p-8 rounded-[25px] shadow-sm">`;
                 
                 if (app.activeFields.name) {
                     cardRows += `
-                    <div class="text-left truncate">
+                    <div class="text-left truncate flex items-center gap-3">
+                        ${isSerialNumEnabled ? `<span class="inline-flex items-center justify-center bg-amber-600 text-white text-xs font-black px-2 py-1 rounded-md shadow-sm select-none">No.${idx + 1}</span>` : ''}
                         <span class="text-3xl md:text-4xl font-black block bg-gradient-to-r from-amber-800 to-yellow-600 bg-clip-text text-transparent tracking-tighter whitespace-nowrap">${mask.name(w.name)}</span>
                     </div>`;
                 }
@@ -534,8 +647,10 @@
             const time = new Date().toLocaleString();
             winners.forEach(w => app.winners.unshift({ ...w, prizeName: app.prize.name, time }));
 
-            // 啟動彩帶特效
+            // 啟動彩帶特效 & 播放得獎尊榮號角音樂
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            audio.playTada();
+
             saveRecords();
             renderWinners();
             app.prize.drawnCount += winners.length;
@@ -586,11 +701,26 @@
 
         function pickWinners(count) {
             let pool = [...app.participants];
-            if(document.getElementById('dup-check').checked) {
-                const wonInvoices = app.winners.map(w => w.invoice);
-                pool = pool.filter(p => !wonInvoices.includes(p.invoice));
+            
+            // 👑 進階規則：跨獎項中獎排除 (Cross-Prize Exclusion)
+            const isCrossExclude = document.getElementById('cross-exclude-check').checked;
+            if (isCrossExclude && app.winners.length > 0) {
+                // 智慧排它比對：優先比對身分證或發票，無則比對姓名
+                const wonIdNums = app.winners.map(w => w.idNum).filter(Boolean);
+                const wonInvoices = app.winners.map(w => w.invoice).filter(Boolean);
+                const wonNames = app.winners.map(w => w.name).filter(Boolean);
+                
+                pool = pool.filter(p => {
+                    if (p.idNum && wonIdNums.includes(p.idNum)) return false;
+                    if (p.invoice && wonInvoices.includes(p.invoice)) return false;
+                    if (p.name && wonNames.includes(p.name)) return false;
+                    return true;
+                });
             }
+
+            // 👑 本輪重複中獎過濾 (保證同一批次抽選的人絕不重複)
             if(pool.length === 0) return [];
+            
             let res = [];
             const drawSize = Math.min(count, pool.length);
             for(let i=0; i<drawSize; i++) {
@@ -598,7 +728,11 @@
                 let r = Math.random() * total;
                 for(let j=0; j<pool.length; j++) {
                     r -= pool[j].weight;
-                    if(r <= 0) { res.push(pool[j]); pool.splice(j, 1); break; }
+                    if(r <= 0) { 
+                        res.push(pool[j]); 
+                        pool.splice(j, 1); // 抽出後從本輪臨時池中剔除，自然不重複
+                        break; 
+                    }
                 }
             }
             return res;
@@ -656,7 +790,7 @@
             }
             closeConfirmModal();
             
-            // 溫馨提示並在 1.5 秒後自動刷新網頁，讓系統回歸最初乾淨狀態
+            // 溫馨提示並在 1.5 秒後自動刷新網頁，讓系統回復最乾淨狀態
             showToast('中獎歷史紀錄與雲端數據已成功重置，網頁即將自動重新整理...', 'success');
             setTimeout(() => {
                 location.reload();
