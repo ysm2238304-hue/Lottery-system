@@ -23,10 +23,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
         * { font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* 使用副色調（優雅淺灰）作為極致純淨的總背景漸層 */
+        /* 使用優雅淺灰（Slate 50）底色，保護螢幕錄影之對比度，徹底根治黑畫面與色彩擠壓問題 */
         .aurora-bg { background: radial-gradient(circle at 50% -20%, #f8fafc, #f1f5f9, #e2e8f0); position: relative; }
         .marquee-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(0,0,0,0.05); }
-        /* 黃金中獎卡片：在亮色底圖上呈現皇家暖金證書質感，高對比且極利於錄影 */
+        /* 黃金中獎卡片：皇家暖金漸層質感，高對比且極利於螢幕錄影 */
         .winner-card { border: 3px solid #d97706; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); animation: prize-glow 2s infinite alternate; }
         @keyframes prize-glow { from { box-shadow: 0 0 10px rgba(217,119,6,0.1); } to { box-shadow: 0 0 35px rgba(217,119,6,0.3); } }
     </style>
@@ -38,7 +38,7 @@
 
     <div class="relative z-10 max-w-[1700px] mx-auto p-6 lg:p-10 flex flex-col h-screen">
         <!-- 頁首區塊 -->
-        <header class="flex items-center justify-between mb-8 border-b border-slate-200/80 pb-6">
+        <header class="flex items-center justify-between mb-6 border-b border-slate-200/80 pb-6">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
                     <i data-lucide="shield-check" class="text-white w-7 h-7"></i>
@@ -49,13 +49,13 @@
             </div>
             <div class="flex items-center gap-4">
                 <!-- 錄影授權狀態指示燈 (Light 質感亮色) -->
-                <button id="record-auth-btn" onclick="authorizeRecording()" class="px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all">
+                <button id="record-auth-btn" onclick="authorizeRecording()" class="px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm">
                     <span id="record-dot" class="w-2 h-2 rounded-full bg-rose-500"></span> <span id="record-text">點此授權錄影功能</span>
                 </button>
-                <div id="conn-status" class="px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600">
+                <div id="conn-status" class="px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600 shadow-sm">
                     <span class="w-2 h-2 rounded-full bg-slate-400"></span> 離線模式
                 </div>
-                <button onclick="toggleModal('settings-modal')" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-xl transition-all">
+                <button onclick="toggleModal('settings-modal')" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-xl transition-all shadow-sm">
                     <i data-lucide="settings" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -63,7 +63,7 @@
 
         <!-- 經典三分欄 -->
         <main class="grid grid-cols-12 gap-8 flex-1 min-h-0">
-            <!-- 左側分欄：數據名單庫 (主色調：亮白背景與環境微影) -->
+            <!-- 左側分欄：數據名單庫 -->
             <aside class="col-span-3 flex flex-col gap-6 overflow-y-auto no-scrollbar">
                 <div class="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-md shadow-slate-200/50 flex flex-col flex-1 min-h-0">
                     <div class="flex items-center justify-between mb-4">
@@ -72,7 +72,6 @@
                     </div>
 
                     <div class="space-y-3 flex-1 flex flex-col min-h-0">
-                        <!-- 副色調：淺灰輸入框 -->
                         <input type="text" id="preview-search" oninput="renderPreviewList()" placeholder="🔍 輸入關鍵字快速搜尋名冊..." class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500/50 focus:bg-white transition-all">
                         
                         <!-- 智慧自適應標題欄 -->
@@ -85,10 +84,10 @@
                     </div>
                 </div>
 
-                <!-- 抽獎配置卡片 (主色調：亮白背景與環境微影) -->
+                <!-- 抽獎配置卡片 -->
                 <div class="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-md shadow-slate-200/50">
                     <h2 class="text-sm font-black uppercase text-slate-800 tracking-wider mb-4">抽獎配置設定</h2>
-                    <div class="space-y-5">
+                    <div class="space-y-4">
                         <div class="space-y-2">
                             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">當前抽選獎項</label>
                             <select id="prize-sel" onchange="syncUI()" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white transition-all"></select>
@@ -110,7 +109,7 @@
                 </div>
             </aside>
 
-            <!-- 中間分欄：抽獎核心舞台 (高透光白卡，加強陰影聚焦) -->
+            <!-- 中間分欄：抽獎核心舞台 -->
             <section class="col-span-6 flex flex-col gap-6" id="capture-stage">
                 <div class="flex-1 bg-white border border-slate-200/60 rounded-[40px] p-10 shadow-2xl shadow-slate-200/80 flex flex-col items-center justify-between relative">
                     <div class="text-center">
@@ -123,11 +122,17 @@
                         <div class="text-slate-400 text-center text-sm font-medium italic">準備啟動雲端抽獎系統...</div>
                     </div>
 
-                    <!-- 抽獎控制按鈕 -->
-                    <div class="w-full">
-                        <button id="draw-btn" onclick="toggleDraw()" class="w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/20 transition-all flex items-center justify-center gap-4 group">
-                            <i data-lucide="play" class="w-8 h-8 fill-current group-hover:scale-110 transition-transform"></i> 
+                    <!-- 抽獎控制按鈕組合 -->
+                    <div class="w-full space-y-4">
+                        <button id="draw-btn" onclick="toggleDraw()" class="w-full py-5 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-xl shadow-brand-900/20 transition-all flex items-center justify-center gap-4 group">
+                            <i data-lucide="play" class="w-7 h-7 fill-current group-hover:scale-110 transition-transform"></i> 
                             <span id="btn-text">開始抽獎</span>
+                        </button>
+                        
+                        <!-- ⚡ 一次抽完所有品項 (一鍵大抽選黃金按鈕) -->
+                        <button id="grand-draw-btn" onclick="toggleGrandDraw()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-lg rounded-2xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group">
+                            <i data-lucide="zap" class="w-5 h-5 fill-current text-yellow-200 animate-pulse"></i>
+                            <span id="grand-btn-text">⚡ 一次抽完所有品項 (一鍵大抽選)</span>
                         </button>
                     </div>
                 </div>
@@ -160,13 +165,22 @@
             <div class="space-y-6">
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-500">Google Apps Script 應用程式網址</label>
-                    <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 text-sm text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white transition-all font-mono">
+                    <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 text-sm text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white transition-all font-mono font-bold">
                 </div>
 
-                <!-- 借鏡專業抽獎平台：新增進階抽獎規則 Feature Toggles 控制面版 -->
+                <!-- 抽獎進階開關 (Feature Toggles) -->
                 <div class="border-t border-slate-200 pt-4 space-y-3">
                     <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">進階規則配置 (Feature Toggles)</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- 👑 方案 B 設定區塊 (雙欄寬度展示) -->
+                        <label class="flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-all select-none col-span-2 shadow-sm">
+                            <input type="checkbox" id="option-b-check" checked class="w-4 h-4 rounded border-amber-300 bg-white text-brand-600 focus:ring-brand-500">
+                            <div class="text-left">
+                                <span class="text-xs font-black text-amber-900 block">啟用方案 B：硬性權重排序 (預設)</span>
+                                <span class="text-[10px] text-amber-700 font-normal">防越級！大獎優先配給高權重，同分時才採用亂數抽選。</span>
+                            </div>
+                        </label>
+                        
                         <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
                             <input type="checkbox" id="cross-exclude-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
                             <span class="text-xs font-bold text-slate-700">跨獎項完全排除中獎者</span>
@@ -177,11 +191,21 @@
                         </label>
                         <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
                             <input type="checkbox" id="sound-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-700">啟用抽獎音效 (Drum/Tada)</span>
+                            <span class="text-xs font-bold text-slate-700">啟用離線合成音效 (Drum/Tada)</span>
                         </label>
                         <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
                             <input type="checkbox" id="serial-number-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
-                            <span class="text-xs font-bold text-slate-700">得獎名單顯示 No. 流水號</span>
+                            <span class="text-xs font-bold text-slate-700">中獎顯示 No. 流水號</span>
+                        </label>
+                        
+                        <!-- 次要降維設定 -->
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="raw-weight-check" checked class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-[11px] font-bold text-slate-500">使用原始數值為權重基底</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-100 transition-all select-none">
+                            <input type="checkbox" id="power-weight-check" checked class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
+                            <span class="text-[11px] font-bold text-slate-500">啟用權重二次方極限放大</span>
                         </label>
                     </div>
                 </div>
@@ -210,8 +234,7 @@
     </div>
 
     <script>
-        // --- 智慧音效合成引擎 (Web Audio API Synthesizer) ---
-        // 100% 離線可用，免去外部音源檔案加載失敗的痛點
+        // --- 離線音效合成引擎 ---
         const audio = {
             ctx: null,
             init() {
@@ -229,7 +252,7 @@
                     gain.connect(this.ctx.destination);
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(650, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.04);
                     osc.start();
                     osc.stop(this.ctx.currentTime + 0.04);
@@ -252,16 +275,15 @@
                         osc.start(now + delay);
                         osc.stop(now + delay + duration);
                     };
-                    // C5 經典大和弦得獎號角旋律
                     playNote(523.25, 0, 0.12, 0.12); // C5
                     playNote(659.25, 0.05, 0.12, 0.12); // E5
                     playNote(783.99, 0.1, 0.12, 0.12); // G5
-                    playNote(1046.50, 0.18, 0.7, 0.16); // C6 延長音
+                    playNote(1046.50, 0.18, 0.7, 0.16); // C6
                 } catch(e) {}
             }
         };
 
-        // --- 訊息提示引擎 (Toast Helper) ---
+        // --- 訊息提示引擎 ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if(!container) return;
@@ -292,7 +314,7 @@
             }, 4000);
         }
 
-        // --- 核心遮蔽引擎 (Privacy Engine) ---
+        // --- 隱私遮蔽引擎 ---
         const mask = {
             name: (s) => {
                 if(!s) return '***';
@@ -321,16 +343,18 @@
             winners: [],
             gasUrl: localStorage.getItem('aurora_v2_gas') || 'https://script.google.com/macros/s/AKfycbwSZNog_mZu6RD3LnNiPB99RU5pNzAwzERQQEC7-qYNigKnDnKY2JQKgLBr9Em-0WOB/exec',
             drawing: false,
+            grandDrawing: false,
             timer: null,
             prize: null,
-            // 智慧自適應欄位活性狀態 (姓名為強制啟用，電話與信箱強制不顯示以精簡排版)
+            rawMin: 1,
+            rawMax: 1,
             activeFields: {
                 name: true,
                 idNum: false,
                 invoice: false
             },
             activeColumnCount: 1,
-            // 錄影相關狀態
+            isGrandDrawMode: false,
             stream: null,
             mediaRecorder: null,
             recordedChunks: []
@@ -340,25 +364,43 @@
             lucide.createIcons();
             document.getElementById('gas-url').value = app.gasUrl;
             
-            // 載入 localStorage 進階規則狀態
+            // 進階開關載入
             document.getElementById('cross-exclude-check').checked = localStorage.getItem('cfg_cross_exclude') !== 'false';
             document.getElementById('fast-mode-check').checked = localStorage.getItem('cfg_fast_mode') === 'true';
             document.getElementById('sound-check').checked = localStorage.getItem('cfg_sound') !== 'false';
             document.getElementById('serial-number-check').checked = localStorage.getItem('cfg_serial') !== 'false';
+            
+            // 👑 預設啟用核心方案 B 以及對應的權重直抽放大設置
+            document.getElementById('option-b-check').checked = localStorage.getItem('cfg_option_b') !== 'false';
+            document.getElementById('raw-weight-check').checked = localStorage.getItem('cfg_raw_weight') !== 'false';
+            document.getElementById('power-weight-check').checked = localStorage.getItem('cfg_power_weight') !== 'false';
 
             if(app.gasUrl) syncGas(true);
             const saved = localStorage.getItem('aurora_v2_winners');
             if(saved) { app.winners = JSON.parse(saved); renderWinners(); }
+
+            // 快捷鍵：Ctrl + Shift + Enter 開始抽單品
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!app.drawing && !app.grandDrawing) {
+                        toggleDraw();
+                    }
+                }
+            });
         };
 
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
-        // --- 儲存彈窗設定 & 自動備份 ---
+        // --- 儲存設定 ---
         function saveSettings() {
             localStorage.setItem('cfg_cross_exclude', document.getElementById('cross-exclude-check').checked);
             localStorage.setItem('cfg_fast_mode', document.getElementById('fast-mode-check').checked);
             localStorage.setItem('cfg_sound', document.getElementById('sound-check').checked);
             localStorage.setItem('cfg_serial', document.getElementById('serial-number-check').checked);
+            localStorage.setItem('cfg_option_b', document.getElementById('option-b-check').checked);
+            localStorage.setItem('cfg_raw_weight', document.getElementById('raw-weight-check').checked);
+            localStorage.setItem('cfg_power_weight', document.getElementById('power-weight-check').checked);
             
             const urlInput = document.getElementById('gas-url').value.trim();
             if(urlInput) {
@@ -370,7 +412,7 @@
             showToast('進階規則與配置已成功儲存！', 'success');
         }
 
-        // --- 錄影功能授權機制 ---
+        // --- 錄影授權 ---
         async function authorizeRecording() {
             try {
                 app.stream = await navigator.mediaDevices.getDisplayMedia({
@@ -397,17 +439,46 @@
             const dot = document.getElementById('record-dot');
             const text = document.getElementById('record-text');
             if (ok) {
-                btn.className = "px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-bold text-emerald-600 transition-all";
+                btn.className = "px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-bold text-emerald-600 transition-all shadow-sm";
                 dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
                 text.innerText = "自動錄影已啟用";
             } else {
-                btn.className = "px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all";
+                btn.className = "px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm";
                 dot.className = "w-2 h-2 rounded-full bg-rose-500";
                 text.innerText = "點此授權錄影功能";
             }
         }
 
-        // --- 智慧名單預覽渲染 (全動態自適應格線) ---
+        // --- 尋找原始權重極端邊界 ---
+        function findRawBounds() {
+            if (!app.participants.length) return;
+            const weights = app.participants.map(p => Number(p.weight) || 1);
+            app.rawMin = Math.min(...weights);
+            app.rawMax = Math.max(...weights);
+            if (app.rawMax === app.rawMin) {
+                app.rawMax += 0.001; 
+            }
+        }
+
+        // --- 智慧線性映射與次方級放大公式 ---
+        function getRescaledWeight(participant, prizeMin, prizeMax) {
+            const rawVal = Number(participant.weight) || 1;
+            const useRaw = document.getElementById('raw-weight-check').checked;
+            let weight = rawVal;
+            
+            if (!useRaw) {
+                weight = prizeMin + ((rawVal - app.rawMin) / (app.rawMax - app.rawMin)) * (prizeMax - prizeMin);
+            }
+            
+            const usePower = document.getElementById('power-weight-check').checked;
+            if (usePower) {
+                weight = Math.pow(weight, 2);
+            }
+            
+            return Number(weight.toFixed(4));
+        }
+
+        // --- 智慧名單預覽渲染 ---
         function renderPreviewList() {
             const list = document.getElementById('preview-list');
             const header = document.getElementById('preview-header-row');
@@ -419,7 +490,6 @@
                 (p.invoice && p.invoice.toLowerCase().includes(search))
             );
 
-            // 更新預覽表頭為當前啟用的 Grid 寬度
             let colsCount = app.activeColumnCount;
             header.className = `grid grid-cols-${colsCount} gap-2 px-3 py-2.5 bg-slate-100 rounded-xl text-[10px] font-black uppercase text-slate-500 tracking-wider border border-slate-200`;
             
@@ -457,15 +527,14 @@
                     app.participants = d.participants;
                     app.prizes = d.prizes;
                     
-                    // 👑 全自動數據分析器：智慧偵測整張名單中各欄位是否有填寫數據 (UI 強制收斂至名、身、發)
                     app.activeFields = {
                         name: true,
                         idNum: app.participants.some(p => p.idNum && p.idNum.toString().trim() !== ""),
                         invoice: app.participants.some(p => p.invoice && p.invoice.toString().trim() !== "")
                     };
-                    // 計算當前真正開啟的欄位總數
                     app.activeColumnCount = Object.values(app.activeFields).filter(Boolean).length;
 
+                    findRawBounds();
                     updatePrizeUI();
                     updateStatus(true);
                     document.getElementById('p-count').innerText = `${app.participants.length} 筆`;
@@ -482,7 +551,7 @@
         function updateStatus(ok) {
             const el = document.getElementById('conn-status');
             el.innerHTML = ok ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 已連線至雲端` : `<span class="w-2 h-2 rounded-full bg-rose-500"></span> 連線中斷`;
-            el.className = ok ? "px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-bold text-emerald-600" : "px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600";
+            el.className = ok ? "px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-bold text-emerald-600 shadow-sm" : "px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600 shadow-sm";
         }
 
         function updatePrizeUI() {
@@ -500,14 +569,182 @@
             }
         }
 
-        // --- 抽獎流程 (3秒自動滾動後進入3.5秒定格錄影) ---
+        function startRecordingStream() {
+            if (app.stream) {
+                app.recordedChunks = [];
+                try {
+                    app.mediaRecorder = new MediaRecorder(app.stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 });
+                } catch(e) {
+                    try {
+                        app.mediaRecorder = new MediaRecorder(app.stream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
+                    } catch(err) {
+                        app.mediaRecorder = new MediaRecorder(app.stream);
+                    }
+                }
+                app.mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) app.recordedChunks.push(e.data);
+                };
+                app.mediaRecorder.start();
+            } else {
+                showToast('未開啟螢幕授權錄影，將不進行錄影備份。', 'info');
+            }
+        }
+
+        // --- 方案 A 核心分頁輪播與動態定格引擎 ---
+        function startPaginationRender(winners, isGrandDraw, onComplete) {
+            const isFastMode = document.getElementById('fast-mode-check').checked;
+            const pageDisplayTime = 3000; // 每頁定格 3 秒
+            
+            // 智慧分頁：大於等於 30 人每頁 10 人（雙列），其餘每頁 3 人（單列，確保中低解析度完全無損不溢出）
+            const itemsPerPage = (winners.length >= 30) ? 10 : 3;
+            const totalPages = Math.ceil(winners.length / itemsPerPage);
+            
+            if (isFastMode) {
+                // 快速模式：一鍵全屏
+                renderPage(winners, 0, winners.length, isGrandDraw, 1, 1);
+                setTimeout(() => {
+                    onComplete();
+                }, 100);
+                return;
+            }
+
+            let currentPage = 0;
+            renderPage(winners, currentPage, itemsPerPage, isGrandDraw, currentPage + 1, totalPages);
+            
+            const interval = setInterval(() => {
+                currentPage++;
+                if (currentPage < totalPages) {
+                    renderPage(winners, currentPage, itemsPerPage, isGrandDraw, currentPage + 1, totalPages);
+                    confetti({ particleCount: 30, spread: 45, origin: { y: 0.6 } });
+                } else {
+                    clearInterval(interval);
+                }
+            }, pageDisplayTime);
+
+            const totalDelay = (totalPages * pageDisplayTime) + 1500;
+            setTimeout(() => {
+                clearInterval(interval);
+                onComplete();
+            }, totalDelay);
+        }
+
+        // 渲染指定分頁畫面
+        function renderPage(winners, pageIndex, itemsPerPage, isGrandDraw, pageNum, totalPages) {
+            const box = document.getElementById('marquee-box');
+            
+            // 👑 【黃金核心修復】1. 強制重置滾動位置為 0，徹底終結瀏覽器保留上一頁 scrollTop 造成的切頂與破圖 Bug！
+            box.scrollTop = 0;
+            
+            // 👑 【黃金核心修復】2. 強制在錄影存證展示階段關閉 overflow-y，確保影片乾淨無滾動條！
+            box.style.overflowY = 'hidden'; 
+            
+            const showInvoice = app.activeFields.invoice;
+            
+            // 決定欄位寬度
+            let colsCount = isGrandDraw ? (showInvoice ? 4 : 3) : app.activeColumnCount;
+            const gridClass = `grid grid-cols-${colsCount} gap-4`;
+            
+            // 👑 縮小表頭間距 py-2 與 mb-2.5，為下方卡片釋放黃金高度空間
+            let headerHtml = `
+            <div class="flex justify-between items-center bg-amber-50 px-6 py-2 border border-amber-200 rounded-xl mb-2.5 shadow-sm select-none">
+                <span class="text-xs font-black text-amber-800 uppercase tracking-widest">📋 一鍵大抽選存證畫面 - 第 ${pageNum} / ${totalPages} 頁</span>
+                <span class="text-xs font-mono font-black bg-amber-600 text-white px-2.5 py-0.5 rounded-full">頁數: ${pageNum} / ${totalPages}</span>
+            </div>
+            <div class="${gridClass} px-6 py-2.5 bg-amber-100/50 border border-amber-200 rounded-xl text-xs font-black uppercase text-amber-700 tracking-wider shadow-sm">
+            `;
+            
+            if (isGrandDraw) {
+                headerHtml += `<span class="text-left whitespace-nowrap">👑 獲得獎項</span>`;
+                headerHtml += `<span class="text-center whitespace-nowrap">得獎者</span>`;
+                headerHtml += `<span class="text-center whitespace-nowrap">💳 身分證號</span>`;
+                if (showInvoice) headerHtml += `<span class="text-right whitespace-nowrap">🎫 發票號碼</span>`;
+            } else {
+                if (app.activeFields.name)    headerHtml += `<span class="text-left whitespace-nowrap">👑 得獎者</span>`;
+                if (app.activeFields.idNum)   headerHtml += `<span class="text-center whitespace-nowrap">💳 身分證號</span>`;
+                if (app.activeFields.invoice) headerHtml += `<span class="text-right whitespace-nowrap">🎫 發票號碼</span>`;
+            }
+            headerHtml += `</div>`;
+
+            // 取得該頁得獎人
+            const startIdx = pageIndex * itemsPerPage;
+            const endIdx = Math.min(startIdx + itemsPerPage, winners.length);
+            const pageWinners = winners.slice(startIdx, endIdx);
+
+            const isDoubleColumn = (itemsPerPage === 10);
+            
+            // 👑 縮小間距：單列卡片間距改為 gap-2.5 (原本為 gap-4)，釋放垂直高度防止溢出
+            const listContainerClass = isDoubleColumn ? "grid grid-cols-2 gap-3" : "flex flex-col gap-2.5";
+
+            const isSerialNumEnabled = document.getElementById('serial-number-check').checked;
+
+            const listHtml = pageWinners.map((w, idx) => {
+                const absoluteIndex = startIdx + idx;
+                
+                // 👑 【黃金核心修復】3. 重新定製卡片內距、字體級距，大幅收縮垂直高度
+                // 單列時採用精緻的 py-4 px-6 (原本為 p-8 且高度過高)，字體大小精準調諧，徹底防止溢出
+                const cardPadding = isDoubleColumn ? "p-3.5 rounded-xl" : "py-4 px-6 rounded-2xl";
+                const nameSize = isDoubleColumn ? "text-xl md:text-2xl" : "text-2xl md:text-3xl";
+                const infoSize = isDoubleColumn ? "text-sm font-mono" : "text-base md:text-lg font-mono";
+                const badgePadding = isDoubleColumn ? "px-2.5 py-1 text-xs" : "px-4 py-2 text-sm md:text-base";
+
+                let cardRows = `<div class="winner-card ${gridClass} items-center ${cardPadding} shadow-sm">`;
+                
+                if (isGrandDraw) {
+                    cardRows += `<div class="text-left truncate flex items-center gap-2">
+                        ${isSerialNumEnabled ? `<span class="inline-flex items-center justify-center bg-amber-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">No.${absoluteIndex + 1}</span>` : ''}
+                        <span class="text-base font-black text-amber-950 truncate whitespace-nowrap">${w.prizeName}</span>
+                    </div>`;
+                    cardRows += `<div class="text-center truncate">
+                        <span class="text-2xl font-black bg-gradient-to-r from-amber-800 to-yellow-600 bg-clip-text text-transparent whitespace-nowrap">${mask.name(w.name)}</span>
+                    </div>`;
+                    cardRows += `<div class="text-center truncate">
+                        <span class="text-base font-mono font-bold text-slate-700 whitespace-nowrap">${mask.id(w.idNum)}</span>
+                    </div>`;
+                    if (showInvoice) {
+                        cardRows += `<div class="text-right truncate">
+                            <span class="bg-amber-600 text-white px-3 py-1.5 rounded-xl text-xs font-black font-mono inline-block whitespace-nowrap">${w.invoice || '無'}</span>
+                        </div>`;
+                    }
+                } else {
+                    if (app.activeFields.name) {
+                        cardRows += `
+                        <div class="text-left truncate flex items-center gap-3">
+                            ${isSerialNumEnabled ? `<span class="inline-flex items-center justify-center bg-amber-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm select-none">No.${absoluteIndex + 1}</span>` : ''}
+                            <span class="${nameSize} font-black block bg-gradient-to-r from-amber-800 to-yellow-600 bg-clip-text text-transparent tracking-tighter whitespace-nowrap">${mask.name(w.name)}</span>
+                        </div>`;
+                    }
+                    if (app.activeFields.idNum) {
+                        cardRows += `<div class="text-center truncate"><span class="${infoSize} font-bold text-slate-700 whitespace-nowrap">${mask.id(w.idNum)}</span></div>`;
+                    }
+                    if (app.activeFields.invoice) {
+                        cardRows += `
+                        <div class="text-right truncate">
+                            <span class="bg-amber-600 text-white ${badgePadding} rounded-2xl font-black font-mono inline-block shadow-lg shadow-amber-600/20 whitespace-nowrap">${w.invoice}</span>
+                        </div>`;
+                    }
+                }
+                cardRows += `</div>`;
+                return cardRows;
+            }).join('');
+
+            box.innerHTML = `
+                <div class="w-full">
+                    ${headerHtml}
+                    <div class="mt-2.5 ${listContainerClass}">
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 單品項抽獎流程 ---
         function toggleDraw() {
             if(app.drawing) {
                 stopDraw();
             } else {
+                app.isGrandDrawMode = false;
                 startDraw();
                 
-                // 智慧自適應：若開啟快速模式 (Fast Mode)，直接跳過動畫定格
                 const isFastMode = document.getElementById('fast-mode-check').checked;
                 if (isFastMode) {
                     stopDraw();
@@ -523,28 +760,13 @@
             if(!app.participants.length || !app.prize) return showToast('請確認名單與獎項已載入。', 'error');
             app.drawing = true;
             
-            if (app.stream) {
-                app.recordedChunks = [];
-                try {
-                    app.mediaRecorder = new MediaRecorder(app.stream, { mimeType: 'video/webm;codecs=vp9' });
-                } catch(e) {
-                    try {
-                        app.mediaRecorder = new MediaRecorder(app.stream, { mimeType: 'video/webm' });
-                    } catch(err) {
-                        app.mediaRecorder = new MediaRecorder(app.stream);
-                    }
-                }
-                
-                app.mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) app.recordedChunks.push(e.data);
-                };
-                app.mediaRecorder.start();
-            } else {
-                showToast('目前未開啟螢幕錄製，抽獎將不進行錄影備份。', 'info');
-            }
+            startRecordingStream();
 
             const btn = document.getElementById('draw-btn');
+            const gBtn = document.getElementById('grand-draw-btn');
             btn.disabled = true;
+            gBtn.disabled = true;
+            gBtn.className = "w-full py-4 bg-slate-100 text-slate-400 font-bold text-lg rounded-2xl border border-slate-200 cursor-not-allowed flex items-center justify-center gap-2 transition-all";
             btn.className = "w-full py-6 bg-slate-200 text-slate-400 font-black text-2xl rounded-[30px] shadow-none cursor-not-allowed flex items-center justify-center gap-4 transition-all border border-slate-300/60";
             document.getElementById('btn-text').innerText = "正在抽選中...";
             
@@ -559,12 +781,9 @@
             }
 
             app.timer = setInterval(() => {
-                // 跑馬燈滾動音效
                 audio.playTick();
-
                 cards.forEach(c => {
                     const p = app.participants[Math.floor(Math.random()*app.participants.length)];
-                    
                     let itemHtml = '';
                     if (app.activeFields.name) itemHtml += `<span class="font-black text-brand-600 text-lg truncate text-left">${mask.name(p.name)}</span>`;
                     if (app.activeFields.idNum) itemHtml += `<span class="text-xs text-slate-500 font-mono text-center truncate">${mask.id(p.idNum)}</span>`;
@@ -580,174 +799,309 @@
             clearInterval(app.timer);
             app.drawing = false;
 
-            const btn = document.getElementById('draw-btn');
-            btn.disabled = true;
-            btn.className = "w-full py-6 bg-amber-500/10 border border-amber-500/30 text-amber-600 font-black text-2xl rounded-[30px] flex items-center justify-center gap-4 transition-all cursor-wait";
-            document.getElementById('btn-text').innerText = "得獎畫面錄製存證中 (3.5秒)...";
-
-            const num = parseInt(document.getElementById('draw-num').value) || 1;
-            const winners = pickWinners(num);
+            const winners = pickWinners(parseInt(document.getElementById('draw-num').value) || 1, app.prize);
             
             if (winners.length === 0) {
-                showToast('名單抽獎池中沒有合規的人選！', 'error');
-                btn.disabled = false;
-                btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/20 transition-all flex items-center justify-center gap-4 group";
-                document.getElementById('btn-text').innerText = "開始抽獎";
+                showToast('名單中沒有合規的人選！', 'error');
+                restoreButtons();
                 if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') app.mediaRecorder.stop();
                 return;
             }
 
-            // 👑 中獎者看板【自適應欄位收斂極致大字版】
-            const box = document.getElementById('marquee-box');
-            const gridClass = `grid grid-cols-${app.activeColumnCount} gap-4`;
+            // 計算方案 A 動態延遲
+            const itemsPerPage = (winners.length >= 30) ? 10 : 5;
+            const totalPages = Math.ceil(winners.length / itemsPerPage);
+            const totalDelaySeconds = (((totalPages * 3000) + 1500) / 1000).toFixed(1);
 
-            // 動態生成精簡且單行不折行得獎表頭
-            let headerHtml = `<div class="${gridClass} px-6 py-4 bg-amber-100/50 border border-amber-200 rounded-xl text-sm md:text-base font-black uppercase text-amber-700 tracking-wider shadow-sm">`;
-            if (app.activeFields.name)    headerHtml += `<span class="text-left whitespace-nowrap">👑 得獎者</span>`;
-            if (app.activeFields.idNum)   headerHtml += `<span class="text-center whitespace-nowrap">💳 身分證號</span>`;
-            if (app.activeFields.invoice) headerHtml += `<span class="text-right whitespace-nowrap">🎫 發票號碼</span>`;
-            headerHtml += `</div>`;
-
-            // 是否啟用 No. 流水號顯示
-            const isSerialNumEnabled = document.getElementById('serial-number-check').checked;
-
-            // 動態生成「中獎人卡片」HTML
-            const listHtml = winners.map((w, idx) => {
-                let cardRows = `<div class="winner-card ${gridClass} items-center p-8 rounded-[25px] shadow-sm">`;
-                
-                if (app.activeFields.name) {
-                    cardRows += `
-                    <div class="text-left truncate flex items-center gap-3">
-                        ${isSerialNumEnabled ? `<span class="inline-flex items-center justify-center bg-amber-600 text-white text-xs font-black px-2 py-1 rounded-md shadow-sm select-none">No.${idx + 1}</span>` : ''}
-                        <span class="text-3xl md:text-4xl font-black block bg-gradient-to-r from-amber-800 to-yellow-600 bg-clip-text text-transparent tracking-tighter whitespace-nowrap">${mask.name(w.name)}</span>
-                    </div>`;
-                }
-                if (app.activeFields.idNum) {
-                    cardRows += `<div class="text-center truncate"><span class="text-lg md:text-xl font-mono font-bold text-slate-700 whitespace-nowrap">${mask.id(w.idNum)}</span></div>`;
-                }
-                if (app.activeFields.invoice) {
-                    cardRows += `
-                    <div class="text-right truncate">
-                        <span class="bg-amber-600 text-white px-5 py-3 rounded-2xl text-base md:text-lg font-black font-mono inline-block shadow-lg shadow-amber-600/20 whitespace-nowrap">${w.invoice}</span>
-                    </div>`;
-                }
-                cardRows += `</div>`;
-                return cardRows;
-            }).join('');
-
-            box.innerHTML = `
-                <div class="w-full space-y-4">
-                    ${headerHtml}
-                    <div class="space-y-4">
-                        ${listHtml}
-                    </div>
-                </div>
-            `;
+            const btn = document.getElementById('draw-btn');
+            btn.className = "w-full py-6 bg-amber-500/10 border border-amber-500/30 text-amber-600 font-black text-2xl rounded-[30px] flex items-center justify-center gap-4 transition-all cursor-wait";
+            document.getElementById('btn-text').innerText = `得獎畫面分頁錄影存證中 (${totalDelaySeconds}秒)...`;
 
             const time = new Date().toLocaleString();
             winners.forEach(w => app.winners.unshift({ ...w, prizeName: app.prize.name, time }));
 
-            // 啟動彩帶特效 & 播放得獎尊榮號角音樂
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            // 觸發音效與彩帶
             audio.playTada();
-
             saveRecords();
             renderWinners();
             app.prize.drawnCount += winners.length;
             syncUI();
 
-            // 延遲 3.5 秒錄影存證
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-2xl shadow-brand-900/20 transition-all flex items-center justify-center gap-4 group";
-                document.getElementById('btn-text').innerText = "開始抽獎";
-
+            // 啟動方案 A 智慧分頁渲染引擎
+            startPaginationRender(winners, false, () => {
+                restoreButtons();
                 if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
-                    showToast('正在生成與壓縮抽獎影片錄影...', 'info');
+                    showToast('正在生成與壓縮中獎錄影檔...', 'info');
                     app.mediaRecorder.onstop = async () => {
                         const blob = new Blob(app.recordedChunks, { type: 'video/webm' });
                         const reader = new FileReader();
                         reader.readAsDataURL(blob);
                         reader.onloadend = () => {
                             const base64data = reader.result.split(',')[1];
-                            uploadAndRecord(winners, time, base64data);
+                            uploadAndRecord(winners, time, base64data, false);
                         };
                     };
                     app.mediaRecorder.stop();
                 } else {
-                    uploadAndRecord(winners, time, null);
+                    uploadAndRecord(winners, time, null, false);
                 }
-            }, 3500);
+            });
         }
 
-        // 打包發送 POST 請求給 GAS
-        function uploadAndRecord(winners, time, videoBase64) {
-            if(app.gasUrl) {
-                const cleanUrl = getCleanUrl(app.gasUrl);
-                fetch(`${cleanUrl}?action=recordWinners`, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ 
-                        prizeId: app.prize.id, 
-                        prizeName: app.prize.name,
-                        winners: winners.map(w => ({ ...w, prizeName: app.prize.name, time })),
-                        videoBase64: videoBase64 
-                    })
-                }).then(() => {
-                    showToast('中獎數據已自動上傳並寫入雲端試算表！', 'success');
-                });
+        // --- 一鍵大抽選：一次抽完全部品項 (Grand Draw) ---
+        function toggleGrandDraw() {
+            if (app.grandDrawing) return;
+            app.isGrandDrawMode = true;
+            startGrandDraw();
+        }
+
+        async function startGrandDraw() {
+            const totalRemainingPrizeM = app.prizes.reduce((sum, p) => sum + Math.max(0, p.count - p.drawnCount), 0);
+            if (totalRemainingPrizeM <= 0) return showToast('所有禮物品項的配額皆已抽完！', 'error');
+            if (!app.participants.length) return showToast('請載入名單！', 'error');
+
+            app.grandDrawing = true;
+            startRecordingStream();
+
+            const btn = document.getElementById('draw-btn');
+            const gBtn = document.getElementById('grand-draw-btn');
+            btn.disabled = true;
+            gBtn.disabled = true;
+            btn.className = "w-full py-6 bg-slate-100 text-slate-400 font-black text-2xl rounded-[30px] cursor-not-allowed flex items-center justify-center gap-4 transition-all";
+            gBtn.className = "w-full py-4 bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-lg rounded-2xl cursor-wait flex items-center justify-center gap-2 animate-pulse";
+            document.getElementById('grand-btn-text').innerText = "⚡ 一鍵大抽選進行中...";
+
+            const box = document.getElementById('marquee-box');
+            box.innerHTML = '';
+
+            const isFastMode = document.getElementById('fast-mode-check').checked;
+
+            if (isFastMode) {
+                executeGrandDrawCore();
+            } else {
+                const previewCard = document.createElement('div');
+                previewCard.className = "marquee-card bg-slate-50 p-6 rounded-2xl text-center border border-slate-200";
+                box.appendChild(previewCard);
+                
+                let rollCount = 0;
+                const rollTimer = setInterval(() => {
+                    audio.playTick();
+                    const p = app.participants[Math.floor(Math.random() * app.participants.length)];
+                    previewCard.innerHTML = `<span class="font-black text-amber-600 text-xl tracking-wider">⚡ 正在批次大抽選中: ${mask.name(p.name)} ...</span>`;
+                    rollCount++;
+                    if (rollCount >= 35) {
+                        clearInterval(rollTimer);
+                        executeGrandDrawCore();
+                    }
+                }, 75);
             }
         }
 
-        function pickWinners(count) {
+        // --- 一鍵大抽選核心計算：方案 B 硬性權重優先級排序 ---
+        function executeGrandDrawCore() {
             let pool = [...app.participants];
-            
-            // 👑 進階規則：跨獎項中獎排除 (Cross-Prize Exclusion)
+            let activePrizes = [...app.prizes].filter(p => p.count - p.drawnCount > 0);
+
+            // 🏆 跨獎項排除過濾
             const isCrossExclude = document.getElementById('cross-exclude-check').checked;
             if (isCrossExclude && app.winners.length > 0) {
-                // 智慧排它比對：優先比對身分證或發票，無則比對姓名
                 const wonIdNums = app.winners.map(w => w.idNum).filter(Boolean);
-                const wonInvoices = app.winners.map(w => w.invoice).filter(Boolean);
                 const wonNames = app.winners.map(w => w.name).filter(Boolean);
-                
-                pool = pool.filter(p => {
-                    if (p.idNum && wonIdNums.includes(p.idNum)) return false;
-                    if (p.invoice && wonInvoices.includes(p.invoice)) return false;
-                    if (p.name && wonNames.includes(p.name)) return false;
-                    return true;
+                pool = pool.filter(p => !wonIdNums.includes(p.idNum) && !wonNames.includes(p.name));
+            }
+
+            let allWinners = [];
+            const time = new Date().toLocaleString();
+
+            const useOptionB = document.getElementById('option-b-check').checked;
+
+            if (useOptionB) {
+                // 🔒 方案 B 核心：硬性權重排序 + 同分隨機亂數破局
+                pool.forEach(p => p.rand = Math.random());
+                pool.sort((a, b) => {
+                    const wA = Number(a.weight) || 1;
+                    const wB = Number(b.weight) || 1;
+                    if (wB !== wA) return wB - wA; // 高權重絕對優先
+                    return b.rand - a.rand;       // 同權重隨機破局
+                });
+
+                // 按試算表從上到下（大獎 ➔ 小獎）的天然優先權依序配發
+                activePrizes.forEach(prize => {
+                    let rQuota = prize.count - prize.drawnCount;
+                    if (pool.length === 0) return;
+                    
+                    let prizeWinners = pool.splice(0, Math.min(rQuota, pool.length));
+                    prizeWinners.forEach(w => {
+                        allWinners.push({
+                            ...w,
+                            prizeId: prize.id,
+                            prizeName: prize.name,
+                            time: time
+                        });
+                    });
+                });
+            } else {
+                // 備用方案 A：舊有遞減加權輪盤映射
+                activePrizes.forEach(prize => {
+                    let rQuota = prize.count - prize.drawnCount;
+                    for (let k = 0; k < rQuota; k++) {
+                        if (pool.length === 0) break;
+
+                        const initialM = app.prizes.reduce((sum, pr) => sum + Math.max(0, pr.count - pr.drawnCount), 0);
+                        const currentM = Math.max(1, initialM - allWinners.length);
+                        const prizeMin = 1;
+                        const prizeMax = currentM > 1 ? currentM : 2;
+
+                        let totalWeight = 0;
+                        pool.forEach(p => {
+                            p.currentWeight = getRescaledWeight(p, prizeMin, prizeMax);
+                            totalWeight += p.currentWeight;
+                        });
+
+                        let r = Math.random() * totalWeight;
+                        for (let i = 0; i < pool.length; i++) {
+                            r -= pool[i].currentWeight;
+                            if (r <= 0) {
+                                let winner = pool[i];
+                                allWinners.push({
+                                    ...winner,
+                                    prizeId: prize.id,
+                                    prizeName: prize.name,
+                                    time: time
+                                });
+                                pool.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
                 });
             }
 
-            // 👑 本輪重複中獎過濾 (保證同一批次抽選的人絕不重複)
-            if(pool.length === 0) return [];
+            // 更新配額與紀錄
+            allWinners.forEach(w => {
+                app.winners.unshift(w);
+                const originalPrize = app.prizes.find(p => p.id == w.prizeId);
+                if (originalPrize) originalPrize.drawnCount += 1;
+            });
+
+            audio.playTada();
+            saveRecords();
+            renderWinners();
+            syncUI();
+
+            // 方案 A 一鍵大抽選智慧定格翻頁計時
+            const itemsPerPage = (allWinners.length >= 30) ? 10 : 5;
+            const totalPages = Math.ceil(allWinners.length / itemsPerPage);
+            const totalDelaySeconds = (((totalPages * 3000) + 1500) / 1000).toFixed(1);
+
+            const gBtn = document.getElementById('grand-draw-btn');
+            gBtn.className = "w-full py-4 bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-lg rounded-2xl cursor-wait flex items-center justify-center gap-2";
+            document.getElementById('grand-btn-text').innerText = `⚡ 一鍵大抽選分頁錄製中 (${totalDelaySeconds}秒)...`;
+
+            startPaginationRender(allWinners, true, () => {
+                restoreButtons();
+                app.grandDrawing = false;
+                if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
+                    showToast('正在生成與壓縮中獎錄影檔...', 'info');
+                    app.mediaRecorder.onstop = async () => {
+                        const blob = new Blob(app.recordedChunks, { type: 'video/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = () => {
+                            const base64data = reader.result.split(',')[1];
+                            uploadAndRecord(allWinners, time, base64data, true);
+                        };
+                    };
+                    app.mediaRecorder.stop();
+                } else {
+                    uploadAndRecord(allWinners, time, null, true);
+                }
+            });
+        }
+
+        // --- 還原控制按鈕 ---
+        function restoreButtons() {
+            const btn = document.getElementById('draw-btn');
+            const gBtn = document.getElementById('grand-draw-btn');
+            btn.disabled = false;
+            gBtn.disabled = false;
+            btn.className = "w-full py-6 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-2xl rounded-[30px] shadow-xl shadow-brand-900/20 transition-all flex items-center justify-center gap-4 group";
+            gBtn.className = "w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-lg rounded-2xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group";
+            document.getElementById('btn-text').innerText = "開始抽獎";
+            document.getElementById('grand-btn-text').innerText = "⚡ 一次抽完所有品項 (一鍵大抽選)";
+        }
+
+        // --- 篩選符合條件的中獎者 ---
+        function pickWinners(count, prize) {
+            let pool = [...app.participants];
             
-            let res = [];
-            const drawSize = Math.min(count, pool.length);
-            for(let i=0; i<drawSize; i++) {
-                let total = pool.reduce((s, x) => s + x.weight, 0);
-                let r = Math.random() * total;
-                for(let j=0; j<pool.length; j++) {
-                    r -= pool[j].weight;
-                    if(r <= 0) { 
-                        res.push(pool[j]); 
-                        pool.splice(j, 1); // 抽出後從本輪臨時池中剔除，自然不重複
-                        break; 
+            // 跨獎項歷史排除
+            const isCrossExclude = document.getElementById('cross-exclude-check').checked;
+            if (isCrossExclude && app.winners.length > 0) {
+                const wonIdNums = app.winners.map(w => w.idNum).filter(Boolean);
+                const wonNames = app.winners.map(w => w.name).filter(Boolean);
+                pool = pool.filter(p => !wonIdNums.includes(p.idNum) && !wonNames.includes(p.name));
+            }
+
+            // 本輪重複發票過濾
+            if(document.getElementById('dup-check').checked) {
+                const wonInvoices = app.winners.map(w => w.invoice).filter(Boolean);
+                pool = pool.filter(p => !wonInvoices.includes(p.invoice));
+            }
+
+            if(pool.length === 0) return [];
+
+            const useOptionB = document.getElementById('option-b-check').checked;
+
+            if (useOptionB) {
+                // 🔒 方案 B 核心：硬性權重排序 + 同分隨機亂數破局法
+                pool.forEach(p => p.rand = Math.random());
+                pool.sort((a, b) => {
+                    const wA = Number(a.weight) || 1;
+                    const wB = Number(b.weight) || 1;
+                    if (wB !== wA) return wB - wA;
+                    return b.rand - a.rand;
+                });
+                return pool.slice(0, Math.min(count, pool.length));
+            } else {
+                // 備用方案 A：加權隨機輪盤機率映射
+                const currentM = app.prizes.reduce((sum, pr) => sum + Math.max(0, pr.count - pr.drawnCount), 0);
+                const prizeMin = 1;
+                const prizeMax = currentM > 1 ? currentM : 2;
+
+                let res = [];
+                const drawSize = Math.min(count, pool.length);
+                for(let i=0; i<drawSize; i++) {
+                    let total = 0;
+                    pool.forEach(p => {
+                        p.currentWeight = getRescaledWeight(p, prizeMin, prizeMax);
+                        total += p.currentWeight;
+                    });
+
+                    let r = Math.random() * total;
+                    for(let j=0; j<pool.length; j++) {
+                        r -= pool[j].currentWeight;
+                        if(r <= 0) { 
+                            res.push(pool[j]); 
+                            pool.splice(j, 1); 
+                            break; 
+                        }
                     }
                 }
+                return res;
             }
-            return res;
         }
 
         function saveRecords() { localStorage.setItem('aurora_v2_winners', JSON.stringify(app.winners)); }
 
-        // --- 渲染右側歷史看板 ---
+        // --- 歷史紀錄渲染 ---
         function renderWinners() {
             const list = document.getElementById('win-log');
             document.getElementById('win-cnt').innerText = app.winners.length;
             list.innerHTML = app.winners.map(w => {
                 const hasInvoiceVal = w.invoice && w.invoice.trim() !== "";
                 return `
-                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl flex flex-col gap-1.5 hover:border-brand-500/40 transition-all text-xs font-bold">
+                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl flex flex-col gap-1.5 hover:border-brand-500/40 transition-all text-xs font-bold shadow-sm">
                         <div class="flex justify-between items-center border-b border-slate-200 pb-1.5 mb-1">
                             <span class="text-[9px] font-black text-brand-600 uppercase tracking-wider">${w.prizeName}</span>
                             <span class="text-[8px] text-slate-500 font-mono">${w.time.split(' ')[1]}</span>
@@ -755,21 +1109,16 @@
                         <div class="grid grid-cols-12 gap-1 items-center text-slate-700">
                             <span class="col-span-5 text-slate-800 truncate">${mask.name(w.name)}</span>
                             <span class="col-span-4 text-center font-mono text-slate-500 text-[10px] truncate">${mask.id(w.idNum)}</span>
-                            <span class="col-span-3 text-right font-mono text-brand-600 truncate text-[10px]">${hasInvoiceVal ? w.invoice : '無發票'}</span>
+                            <span class="col-span-3 text-right font-mono text-brand-600 truncate text-[10px]">${hasInvoiceVal ? w.invoice : '無資料'}</span>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // --- 清除與重設 ---
-        function clearAll() {
-            document.getElementById('confirm-clear-modal').classList.remove('hidden');
-        }
-
-        function closeConfirmModal() {
-            document.getElementById('confirm-clear-modal').classList.add('hidden');
-        }
+        // --- 清空與重置 ---
+        function clearAll() { document.getElementById('confirm-clear-modal').classList.remove('hidden'); }
+        function closeConfirmModal() { document.getElementById('confirm-clear-modal').classList.add('hidden'); }
 
         function executeClear() {
             app.winners = [];
@@ -777,7 +1126,6 @@
             renderWinners();
             if(app.gasUrl) {
                 const cleanUrl = getCleanUrl(app.gasUrl);
-                // 傳送空 Body 防止 GAS 崩潰
                 fetch(`${cleanUrl}?action=clearWinners`, { 
                     method: 'POST', 
                     mode: 'no-cors',
@@ -790,8 +1138,7 @@
             }
             closeConfirmModal();
             
-            // 溫馨提示並在 1.5 秒後自動刷新網頁，讓系統回復最乾淨狀態
-            showToast('中獎歷史紀錄與雲端數據已成功重置，網頁即將自動重新整理...', 'success');
+            showToast('所有紀錄已成功清空，網頁即將自動重新整理...', 'success');
             setTimeout(() => {
                 location.reload();
             }, 1500);
@@ -803,6 +1150,25 @@
                 clean = clean.split('?')[0];
             }
             return clean;
+        }
+
+        function uploadAndRecord(winners, time, videoBase64, isGrandDraw) {
+            if(app.gasUrl) {
+                const cleanUrl = getCleanUrl(app.gasUrl);
+                fetch(`${cleanUrl}?action=recordWinners`, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ 
+                        prizeId: isGrandDraw ? null : app.prize.id, 
+                        prizeName: isGrandDraw ? "一鍵大抽選" : app.prize.name,
+                        isGrandDraw: isGrandDraw,
+                        winners: winners.map(w => ({ ...w, time })),
+                        videoBase64: videoBase64 
+                    })
+                }).then(() => {
+                    showToast('數據已自動上傳並更新雲端試算表！', 'success');
+                });
+            }
         }
     </script>
 </body>
