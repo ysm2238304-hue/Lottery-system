@@ -41,7 +41,7 @@
     <!-- 隱藏的原生下拉選單：用作底層 JS 橋接與安全防護，保證頁面完全不當機 -->
     <select id="prize-sel" onchange="syncUI()" class="hidden"></select>
 
-    <div class="relative z-10 max-w-[1750px] mx-auto p-4 lg:p-5 flex flex-col h-screen overflow-hidden">
+    <div class="relative z-10 max-w-[1750px] mx-auto p-4 flex flex-col h-screen overflow-hidden">
         
         <!-- 👑 頂部一體化極簡 Header (節省 80px 垂直高度，實現完美向上延伸) -->
         <header class="flex items-center justify-between mb-3 border-b border-slate-200/80 pb-3 gap-4 flex-shrink-0">
@@ -75,18 +75,17 @@
             </div>
         </header>
 
-        <!-- 經典三分欄 (自適應防溢出佈局) -->
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 lg:overflow-hidden mb-1 overflow-y-auto lg:overflow-y-hidden">
+        <!-- 👑 【黃金比例方案 A】智慧像素配置：20fr (20%) + 20fr (20%) + 43fr (43%) + 17fr (17%) = 100fr -->
+        <main class="grid grid-cols-1 lg:grid-cols-[20fr_20fr_43fr_17fr] gap-4 flex-1 min-h-0 lg:overflow-hidden mb-1 overflow-y-auto lg:overflow-y-hidden">
             
-            <!-- 左側分欄：數據名單庫與獎項清單雙卡片並立 -->
-            <aside class="col-span-1 lg:col-span-3 flex flex-col gap-4 min-h-[350px] lg:min-h-0 lg:h-full overflow-hidden">
-                <!-- 上卡片：抽獎名冊 -->
-                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-[48%] min-h-0 overflow-hidden">
+            <!-- 第一欄 (20%)：👥 抽獎名冊 -->
+            <aside class="col-span-1 flex flex-col min-h-[250px] lg:min-h-0 lg:h-full overflow-hidden">
+                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-full min-h-0 overflow-hidden">
                     <div class="flex items-center justify-between mb-2 flex-shrink-0 gap-1">
                         <h2 class="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1 whitespace-nowrap">
                             <i data-lucide="users" class="w-3.5 h-3.5 text-brand-500"></i> 抽獎名冊
                         </h2>
-                        <button onclick="toggleModal('data-management-modal'); switchDataTab('participants')" class="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 rounded-lg transition-all shadow-sm">
+                        <button onclick="toggleModal('data-management-modal'); switchDataTab('participants')" class="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 rounded-lg transition-all shadow-sm">
                             <i data-lucide="plus" class="w-3 h-3"></i> 匯入名冊
                         </button>
                     </div>
@@ -106,42 +105,41 @@
                         </div>
                     </div>
                 </div>
+            </aside>
 
-                <!-- 下卡片：🎁 獎項清單 -->
-                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-[52%] min-h-0 overflow-hidden">
+            <!-- 第二欄 (20%)：🎁 獎項清單 -->
+            <aside class="col-span-1 flex flex-col min-h-[250px] lg:min-h-0 lg:h-full overflow-hidden">
+                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-full min-h-0 overflow-hidden">
                     <div class="flex-shrink-0 mb-2">
                         <div class="flex items-center justify-between mb-1.5">
                             <h2 class="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1">
                                 <i data-lucide="gift" class="w-3.5 h-3.5 text-amber-500"></i> 獎項清單
                             </h2>
                         </div>
-                        <!-- 產生獎項、表單編輯、文字輸入按鈕組 -->
-                        <div class="grid grid-cols-3 gap-1">
+                        <!-- 合併冗餘按鈕：將原本「表單編輯」與「文字輸入」整合為「鍵入與編輯」 -->
+                        <div class="grid grid-cols-2 gap-1.5">
                             <button onclick="generateDefaultPrizes()" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
                                 🪄 產生獎項
                             </button>
                             <button onclick="toggleModal('data-management-modal'); switchDataTab('prizes')" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
-                                📝 表單編輯
-                            </button>
-                            <button onclick="toggleModal('data-management-modal'); switchDataTab('prizes')" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
-                                ⌨️ 文字輸入
+                                📝 鍵入與編輯
                             </button>
                         </div>
                     </div>
 
-                    <!-- 實體獎項點擊清單 (帶有自動進度，虛線點綴) -->
-                    <div id="sidebar-prize-list" class="flex-1 overflow-y-auto space-y-1 no-scrollbar pr-0.5 text-xs font-bold text-slate-700">
+                    <!-- 實體獎項點擊清單 (帶有自動進度，虛線點綴，100% 高度滾動區域) -->
+                    <div id="sidebar-prize-list" class="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-0.5 text-xs font-bold text-slate-700">
                         <div class="text-slate-400 text-center py-6 italic text-[11px]">暫無獎項設定</div>
                     </div>
                 </div>
             </aside>
 
-            <!-- 中間分欄：抽獎核心舞台 -->
-            <section class="col-span-1 lg:col-span-6 flex flex-col min-h-[400px] lg:min-h-0 lg:h-full overflow-hidden" id="capture-stage">
+            <!-- 第三欄 (43%)：🔮 抽獎核心舞台 (高寬對比完美放大) -->
+            <section class="col-span-1 flex flex-col min-h-[400px] lg:min-h-0 lg:h-full overflow-hidden" id="capture-stage">
                 <div class="flex-1 bg-white border border-slate-200/60 rounded-[28px] p-4 lg:p-5 shadow-xl shadow-slate-200/80 flex flex-col items-center justify-between min-h-0 overflow-hidden relative">
                     
-                    <!-- 👑 抽獎快捷配置面板 (加入「單品項抽獎」核取方塊與狀態聯動，視覺高對比反黑/反灰) -->
-                    <div class="w-full bg-slate-50 border border-slate-200/60 p-2.5 rounded-xl flex items-center justify-between gap-2.5 flex-shrink-0">
+                    <!-- 👑 抽獎快捷配置面板 (結合「單品項抽獎」核取方塊與狀態聯動，視覺高對比反黑/反灰) -->
+                    <div class="w-full bg-slate-50 border border-slate-200/60 p-2.5 rounded-xl flex items-center justify-between gap-2 flex-shrink-0">
                         <div class="flex items-center gap-3">
                             <!-- 單品項抽獎 啟用開關 -->
                             <label class="flex items-center gap-1.5 cursor-pointer select-none">
@@ -161,11 +159,11 @@
                         <!-- 重複中獎過濾 -->
                         <label class="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="dup-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500 shadow-sm">
-                            <span class="text-xs font-bold text-slate-600 whitespace-nowrap">重複中獎過濾</span>
+                            <span class="text-xs font-bold text-slate-600 whitespace-nowrap">重複過濾</span>
                         </label>
                     </div>
 
-                    <!-- 👑 獎項與徽章區塊設為 hidden 隱藏，不影響 JS 指令且完全釋放中間版面空間 -->
+                    <!-- 👑 獎項與徽章區塊設為 hidden 隱藏，完全釋放中間版面空間 -->
                     <div class="text-center flex-shrink-0 hidden">
                         <div id="prize-badge" class="inline-block px-3 py-1 bg-brand-50 border border-brand-200 text-brand-600 rounded-full text-[10px] font-black tracking-widest uppercase mb-2">極光抽獎舞台</div>
                         <h2 id="cur-prize-name" class="text-2xl lg:text-3xl font-black text-slate-950 italic">尚未選擇獎項</h2>
@@ -176,16 +174,16 @@
                         <div class="text-slate-400 text-center text-sm font-medium italic mt-12">準備啟動雲端抽獎系統...</div>
                     </div>
 
-                    <!-- 抽獎控制按鈕組合 (⚡ 一鍵大抽選正式更名為「一次抽選全部獎項」) -->
+                    <!-- 抽獎控制按鈕組合 (⚡ 一鍵大抽選更名為「一次抽選全部獎項」) -->
                     <div class="w-full flex-shrink-0 pt-3 border-t border-slate-100">
                         <div class="grid grid-cols-2 gap-3.5">
-                            <button id="draw-btn" onclick="toggleDraw()" class="w-full py-3 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate">
+                            <button id="draw-btn" onclick="toggleDraw()" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate">
                                 <i data-lucide="play" class="w-4 h-4 fill-current group-hover:scale-110 transition-transform flex-shrink-0"></i> 
                                 <span id="btn-text" class="truncate">開始抽獎</span>
                             </button>
                             
                             <!-- ⚡ 一次抽選全部獎項 黃金按鈕 -->
-                            <button id="grand-draw-btn" onclick="toggleGrandDraw()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-sm lg:text-base rounded-xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate">
+                            <button id="grand-draw-btn" onclick="toggleGrandDraw()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-sm lg:text-base rounded-xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate">
                                 <i data-lucide="zap" class="w-4 h-4 fill-current text-yellow-200 animate-pulse flex-shrink-0"></i>
                                 <span id="grand-btn-text" class="truncate">⚡ 一次抽選全部獎項</span>
                             </button>
@@ -194,20 +192,21 @@
                 </div>
             </section>
 
-            <!-- 右側分欄：中獎紀錄歷史看板 -->
-            <aside class="col-span-1 lg:col-span-3 flex flex-col min-h-[300px] lg:min-h-0 lg:h-full overflow-hidden">
+            <!-- 第四欄 (17%)：🏆 中獎紀錄歷史看板 (高密度微縮膠囊排版) -->
+            <aside class="col-span-1 flex flex-col min-h-[300px] lg:min-h-0 lg:h-full overflow-hidden">
                 <div class="flex-1 bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col min-h-0 overflow-hidden">
                     <div class="flex items-center justify-between mb-2 border-b border-slate-200 pb-2 flex-shrink-0">
                         <h2 class="text-xs font-black uppercase text-amber-600 tracking-widest flex items-center gap-1">
-                            <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i> 中獎紀錄看板
+                            <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i> 紀錄看板
                         </h2>
                         <span id="win-cnt" class="text-xs font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">0</span>
                     </div>
-                    <div id="win-log" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-0.5">
+                    <!-- 中獎紀錄明細滾動區 -->
+                    <div id="win-log" class="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-0.5">
                         <!-- 中獎明細 -->
                     </div>
                     <div class="mt-2 flex-shrink-0">
-                        <button onclick="clearAll()" class="w-full py-2 text-xs font-black bg-slate-100 text-slate-600 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all rounded-lg">重置紀錄</button>
+                        <button onclick="clearAll()" class="w-full py-1.5 text-xs font-black bg-slate-100 text-slate-600 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all rounded-lg">重置紀錄</button>
                     </div>
                 </div>
             </aside>
@@ -224,7 +223,7 @@
             <!-- 雙頁籤切換按鈕 -->
             <div class="flex border-b border-slate-200 mb-4 flex-shrink-0">
                 <button onclick="switchDataTab('participants')" id="tab-btn-participants" class="flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all">👥 參加名冊管理</button>
-                <button onclick="switchDataTab('prizes')" id="tab-btn-prizes" class="flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all">🎁 獎項內容管理</button>
+                <button onclick="switchDataTab('prizes')" id="tab-btn-prizes" class="flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all">🎁 獎項清單管理</button>
             </div>
 
             <!-- 參加名冊管理內容 -->
@@ -250,7 +249,7 @@
                 </div>
             </div>
 
-            <!-- 獎項內容管理內容 -->
+            <!-- 獎項清單管理內容 -->
             <div id="tab-content-prizes" class="space-y-4 flex-1 flex flex-col min-h-0 hidden overflow-y-auto">
                 <!-- 智慧拖曳讀取檔案上傳區 -->
                 <div id="drop-zone-prizes" class="border-2 border-dashed border-slate-200 hover:border-amber-500 bg-slate-50/50 hover:bg-slate-50/20 p-5 rounded-2xl text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group flex-shrink-0 shadow-inner">
@@ -353,6 +352,7 @@
     </div>
 
     <script>
+        // --- 離線音效合成引擎 ---
         const audio = {
             ctx: null,
             init() {
@@ -401,6 +401,7 @@
             }
         };
 
+        // --- 訊息提示引擎 ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if(!container) return;
@@ -431,6 +432,7 @@
             }, 4000);
         }
 
+        // --- 隱私遮蔽引擎 ---
         const mask = {
             name: (s) => {
                 if(!s) return '***';
@@ -452,6 +454,7 @@
             }
         };
 
+        // --- App 狀態 ---
         let app = {
             participants: [],
             prizes: [],
@@ -521,6 +524,7 @@
 
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
+        // --- 智慧「單品項抽獎」模式切換狀態連動 ---
         function toggleSingleDrawMode() {
             const isChecked = document.getElementById('single-draw-toggle').checked;
             const singleLabel = document.getElementById('single-draw-label');
@@ -530,31 +534,32 @@
 
             if (isChecked) {
                 // 啟用狀態 (反粗黑)
-                singleLabel.className = "text-xs font-black text-slate-900 uppercase tracking-wider whitespace-nowrap transition-colors";
+                singleLabel.className = "text-xs font-black text-slate-900 uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer";
                 numLabel.className = "text-xs font-bold text-slate-600 whitespace-nowrap transition-colors";
                 numInput.disabled = false;
-                numInput.className = "w-14 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-brand-500 transition-all shadow-sm";
+                numInput.className = "w-12 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-bold focus:outline-none focus:border-brand-500 transition-all shadow-sm";
 
                 // 還原按鈕狀態
                 if (!app.drawing && !app.grandDrawing) {
                     drawBtn.disabled = false;
-                    drawBtn.className = "w-full py-3 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate";
+                    drawBtn.className = "w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate";
                 }
             } else {
                 // 禁用狀態 (反灰)
-                singleLabel.className = "text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap transition-colors";
+                singleLabel.className = "text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer";
                 numLabel.className = "text-xs font-medium text-slate-400 whitespace-nowrap transition-colors";
                 numInput.disabled = true;
-                numInput.className = "w-14 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 font-bold transition-all shadow-sm cursor-not-allowed";
+                numInput.className = "w-12 bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-400 font-bold transition-all shadow-sm cursor-not-allowed";
 
                 // 鎖定單品按鈕
                 if (!app.drawing && !app.grandDrawing) {
                     drawBtn.disabled = true;
-                    drawBtn.className = "w-full py-3 bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm lg:text-base rounded-xl cursor-not-allowed flex items-center justify-center gap-2 truncate opacity-50";
+                    drawBtn.className = "w-full py-3.5 bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm lg:text-base rounded-xl cursor-not-allowed flex items-center justify-center gap-2 truncate opacity-50";
                 }
             }
         }
 
+        // --- 儲存設定 ---
         function saveSettings() {
             localStorage.setItem('cfg_cross_exclude', document.getElementById('cross-exclude-check').checked);
             localStorage.setItem('cfg_fast_mode', document.getElementById('fast-mode-check').checked);
@@ -574,11 +579,33 @@
             showToast('進階規則與配置已成功儲存！', 'success');
         }
 
+        // --- 抽獎主題即時更新與本地儲存 ---
         function updateThemeTitle() {
             const val = document.getElementById('raffle-theme-input').value;
             localStorage.setItem('aurora_v2_theme', val);
         }
 
+        // --- 頁籤切換邏輯 (手動管理與數據匯入彈窗) ---
+        function switchDataTab(type) {
+            const pTab = document.getElementById('tab-content-participants');
+            const prTab = document.getElementById('tab-content-prizes');
+            const pBtn = document.getElementById('tab-btn-participants');
+            const prBtn = document.getElementById('tab-btn-prizes');
+            
+            if (type === 'participants') {
+                pTab.classList.remove('hidden');
+                prTab.classList.add('hidden');
+                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
+                prBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+            } else {
+                pTab.classList.add('hidden');
+                prTab.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
+                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+                prTab.classList.remove('hidden');
+            }
+        }
+
+        // --- 📂 智慧拖曳與選取檔案直讀核心邏輯 (使用 FileReader + SheetJS) ---
         function initFileDragAndDrop() {
             const setupZone = (zoneId, inputId, type) => {
                 const zone = document.getElementById(zoneId);
@@ -610,6 +637,7 @@
             setupZone('drop-zone-prizes', 'file-input-prizes', 'prizes');
         }
 
+        // 本機直讀與自動解析
         function handleFileSelect(file, type) {
             if (!file) return;
             const reader = new FileReader();
@@ -651,6 +679,7 @@
             }
         }
 
+        // --- 🪄 一鍵產生預設獎項清單 (與圖一完美對齊) ---
         function generateDefaultPrizes() {
             const defaultText = `Apple AirPods Pro 3 ...... 1名
 HERAN無線手持吸塵器 ...... 2名
@@ -664,6 +693,7 @@ A Plastic Project環保吸吸管 ...... 5名
             showToast('已成功產生預設獎項！', 'success');
         }
 
+        // --- 渲染左側獎項實體清單 ---
         function renderSidebarPrizeList() {
             const container = document.getElementById('sidebar-prize-list');
             if(!container) return;
@@ -676,6 +706,7 @@ A Plastic Project環保吸吸管 ...... 5名
                 const isDrawnOut = remaining <= 0;
                 const isActive = app.prize && app.prize.id === p.id;
                 
+                // 動態決定選取與完抽樣式
                 const activeClass = isActive ? 'bg-amber-50 border-amber-300 text-amber-900 shadow-sm' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 text-slate-700';
                 const opacityClass = isDrawnOut ? 'opacity-40 line-through' : '';
                 const statusBadge = isDrawnOut 
@@ -697,12 +728,14 @@ A Plastic Project環保吸吸管 ...... 5名
             }).join('');
         }
 
+        // 點擊左側清單切換獎項
         function selectPrizeById(id) {
             document.getElementById('prize-sel').value = id;
             syncUI();
             renderSidebarPrizeList();
         }
 
+        // --- 參加名單手動解析與解析器 ---
         function importParticipantsManually() {
             const rawText = document.getElementById('manual-participants-text').value.trim();
             if(!rawText) {
@@ -755,6 +788,7 @@ A Plastic Project環保吸吸管 ...... 5名
             }
         }
 
+        // --- 獎項配置手動解析與解析器 ---
         function importPrizesManually() {
             const rawText = document.getElementById('manual-prizes-text').value.trim();
             if(!rawText) {
@@ -820,6 +854,7 @@ A Plastic Project環保吸吸管 ...... 5名
             }
         }
 
+        // --- 錄影授權 ---
         async function authorizeRecording() {
             try {
                 app.stream = await navigator.mediaDevices.getDisplayMedia({
@@ -841,25 +876,22 @@ A Plastic Project環保吸吸管 ...... 5名
             }
         }
 
-        function switchDataTab(type) {
-            const pTab = document.getElementById('tab-content-participants');
-            const prTab = document.getElementById('tab-content-prizes');
-            const pBtn = document.getElementById('tab-btn-participants');
-            const prBtn = document.getElementById('tab-btn-prizes');
-            
-            if (type === 'participants') {
-                pTab.classList.remove('hidden');
-                prTab.classList.add('hidden');
-                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
-                prBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+        function updateRecordUI(ok) {
+            const btn = document.getElementById('record-auth-btn');
+            const dot = document.getElementById('record-dot');
+            const text = document.getElementById('record-text');
+            if (ok) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 transition-all shadow-sm";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.innerText = "自動錄影中";
             } else {
-                pTab.classList.add('hidden');
-                prTab.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
-                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
-                prTab.classList.remove('hidden');
+                btn.className = "px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm";
+                dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                text.innerText = "點此授權錄影";
             }
         }
 
+        // --- 尋找原始權重極端邊界 ---
         function findRawBounds() {
             if (!app.participants.length) return;
             const weights = app.participants.map(p => Number(p.weight) || 1);
@@ -870,6 +902,7 @@ A Plastic Project環保吸吸管 ...... 5名
             }
         }
 
+        // --- 智慧線性映射與次方級放大公式 ---
         function getRescaledWeight(participant, prizeMin, prizeMax) {
             const rawVal = Number(participant.weight) || 1;
             const useRaw = document.getElementById('raw-weight-check').checked;
@@ -887,6 +920,7 @@ A Plastic Project環保吸吸管 ...... 5名
             return Number(weight.toFixed(4));
         }
 
+        // --- 智慧名單預覽渲染 ---
         function renderPreviewList() {
             const list = document.getElementById('preview-list');
             const header = document.getElementById('preview-header-row');
@@ -1128,8 +1162,8 @@ A Plastic Project環保吸吸管 ...... 5名
             `;
         }
 
+        // --- 單品項抽獎流程 ---
         function toggleDraw() {
-            // 若未勾選單品項抽獎，則鎖定此功能直接返回
             if (!document.getElementById('single-draw-toggle').checked) return;
 
             if(app.drawing) {
@@ -1241,6 +1275,7 @@ A Plastic Project環保吸吸管 ...... 5名
             });
         }
 
+        // --- 一次抽選全部獎項 (Grand Draw) ---
         function toggleGrandDraw() {
             if (app.grandDrawing) return;
             app.isGrandDrawMode = true;
@@ -1417,7 +1452,6 @@ A Plastic Project環保吸吸管 ...... 5名
 
             document.getElementById('btn-text').innerText = "開始抽獎";
             
-            // 根據單品抽獎 toggle 的當前勾選狀態，還原開始抽獎按鈕的禁用狀態與外觀
             toggleSingleDrawMode();
         }
 
@@ -1489,21 +1523,22 @@ A Plastic Project環保吸吸管 ...... 5名
 
         function saveRecords() { localStorage.setItem('aurora_v2_winners', JSON.stringify(app.winners)); }
 
+        // --- 👑 中獎紀錄渲染：微縮單行緊湊版，姓名身分證及發票並排一行顯示，極限節省空間 ---
         function renderWinners() {
             const list = document.getElementById('win-log');
             document.getElementById('win-cnt').innerText = app.winners.length;
             list.innerHTML = app.winners.map(w => {
                 const hasInvoiceVal = w.invoice && w.invoice.trim() !== "";
                 return `
-                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl flex flex-col gap-1.5 hover:border-brand-500/40 transition-all text-xs font-bold shadow-sm">
-                        <div class="flex justify-between items-center border-b border-slate-200 pb-1.5 mb-1">
-                            <span class="text-[9px] font-black text-brand-600 uppercase tracking-wider">${w.prizeName}</span>
-                            <span class="text-[8px] text-slate-500 font-mono">${w.time.split(' ')[1]}</span>
+                    <div class="bg-slate-50 border border-slate-200/80 p-2 rounded-xl flex flex-col gap-1 hover:border-brand-500/40 transition-all text-[11px] font-bold shadow-sm">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
+                            <span class="text-[9px] font-black text-brand-600 uppercase tracking-wider truncate max-w-[130px]">${w.prizeName}</span>
+                            <span class="text-[8px] text-slate-400 font-mono">${w.time.split(' ')[1]}</span>
                         </div>
-                        <div class="grid grid-cols-12 gap-1 items-center text-slate-700">
-                            <span class="col-span-5 text-slate-800 truncate">${mask.name(w.name)}</span>
-                            <span class="col-span-4 text-center font-mono text-slate-500 text-[10px] truncate">${mask.id(w.idNum)}</span>
-                            <span class="col-span-3 text-right font-mono text-brand-600 truncate text-[10px]">${hasInvoiceVal ? w.invoice : '無資料'}</span>
+                        <div class="flex items-center justify-between text-slate-700 gap-1.5 font-bold">
+                            <span class="text-slate-800 truncate min-w-[50px]">${mask.name(w.name)}</span>
+                            <span class="font-mono text-slate-400 text-[10px] truncate max-w-[80px]">${mask.id(w.idNum)}</span>
+                            <span class="font-mono text-brand-600 text-[10px] text-right truncate min-w-[65px]">${hasInvoiceVal ? w.invoice : '無資料'}</span>
                         </div>
                     </div>
                 `;
