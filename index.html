@@ -19,6 +19,8 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- 引入 SheetJS 核心庫：實現瀏覽器本機 100% 離線直讀並解析 Excel 檔案 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
         * { font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box; }
@@ -36,106 +38,156 @@
     <!-- Toast 訊息容器 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
-    <div class="relative z-10 max-w-[1750px] mx-auto p-4 lg:p-6 flex flex-col h-screen overflow-hidden">
-        <!-- 頁首區塊（整合快捷設定面板、連線狀態與錄影授權） -->
-        <header class="flex flex-col xl:flex-row items-center justify-between mb-4 border-b border-slate-200/80 pb-4 gap-4 flex-shrink-0">
+    <!-- 隱藏的原生下拉選單：用作底層 JS 橋接與安全防護，保證頁面完全不當機 -->
+    <select id="prize-sel" onchange="syncUI()" class="hidden"></select>
+
+    <div class="relative z-10 max-w-[1750px] mx-auto p-4 lg:p-5 flex flex-col h-screen overflow-hidden">
+        
+        <!-- 👑 頂部一體化極簡 Header (節省 80px 垂直高度，實現完美向上延伸) -->
+        <header class="flex items-center justify-between mb-3 border-b border-slate-200/80 pb-3 gap-4 flex-shrink-0">
             <!-- 左側：系統標誌 -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0">
-                    <i data-lucide="shield-check" class="text-white w-6 h-6"></i>
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                    <i data-lucide="shield-check" class="text-white w-5 h-5"></i>
                 </div>
-                <div>
-                    <h1 class="text-xl font-black tracking-wider text-slate-900 whitespace-nowrap">極光智慧抽獎安全專業版</h1>
-                </div>
+                <h1 class="text-base font-black tracking-wider text-slate-900 whitespace-nowrap hidden sm:block">極光智慧抽獎</h1>
             </div>
 
-            <!-- 中間：抽獎快捷配置面板（原左下角面板上提，釋放巨大名冊空間） -->
-            <div class="flex flex-wrap items-center gap-3 bg-slate-100/90 border border-slate-200/60 p-2.5 rounded-2xl shadow-sm max-w-full">
-                <!-- 當前抽選獎項 (✅ 向兩側大幅度延伸，確保內容完整不切斷) -->
-                <div class="flex items-center gap-1.5 pl-1">
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">當前獎項</label>
-                    <select id="prize-sel" onchange="syncUI()" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all min-w-[260px] sm:min-w-[340px] lg:min-w-[380px] max-w-full cursor-pointer shadow-sm"></select>
-                </div>
-                <div class="h-4 w-px bg-slate-300 hidden sm:block"></div>
-                <!-- 單次抽選人數 -->
-                <div class="flex items-center gap-1.5">
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">單次人數</label>
-                    <input type="number" id="draw-num" value="1" min="1" class="w-12 bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-xs text-center text-slate-800 font-bold focus:outline-none focus:border-brand-500 transition-all">
-                </div>
-                <div class="h-4 w-px bg-slate-300 hidden sm:block"></div>
-                <!-- 重複中獎過濾 (✅ 更名回熟悉的「重複中獎過濾」) -->
-                <label class="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input type="checkbox" id="dup-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500">
-                    <span class="text-xs font-bold text-slate-600 whitespace-nowrap">重複中獎過濾</span>
-                </label>
+            <!-- 中間：抽獎主題輸入框 (直接嵌入 Header，空間利用率達到 100%) -->
+            <div class="flex-1 max-w-2xl mx-2 md:mx-6 relative flex items-center gap-2">
+                <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-current flex-shrink-0"></i>
+                <span class="text-xs font-black text-slate-500 whitespace-nowrap hidden md:inline">抽獎主題：</span>
+                <input type="text" id="raffle-theme-input" value="綠點行動派 綠色場域推廣活動" oninput="updateThemeTitle()" class="w-full bg-slate-100/60 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-brand-500 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-black text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-inner" placeholder="請鍵入抽獎活動主題...">
             </div>
 
             <!-- 右側：功能操作 -->
-            <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="flex items-center gap-2 flex-shrink-0">
                 <!-- 錄影授權狀態指示燈 -->
-                <button id="record-auth-btn" onclick="authorizeRecording()" class="px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm">
+                <button id="record-auth-btn" onclick="authorizeRecording()" class="px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm">
                     <span id="record-dot" class="w-2 h-2 rounded-full bg-rose-500"></span> <span id="record-text">點此授權錄影</span>
                 </button>
-                <div id="conn-status" class="px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-1.5 text-xs font-bold text-slate-600 shadow-sm">
-                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> 離線模式
+                <div id="conn-status" class="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 flex items-center gap-1.5 text-[11px] font-bold text-slate-600 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> 離線模式
                 </div>
-                <button onclick="toggleModal('settings-modal')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-xl transition-all shadow-sm">
+                <button onclick="toggleModal('settings-modal')" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-lg transition-all shadow-sm">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                 </button>
             </div>
         </header>
 
         <!-- 經典三分欄 (自適應防溢出佈局) -->
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 lg:overflow-hidden mb-2 overflow-y-auto lg:overflow-y-hidden">
-            <!-- 左側分欄：數據名單庫 -->
-            <aside class="col-span-1 lg:col-span-3 flex flex-col min-h-[300px] lg:min-h-0 lg:h-full overflow-hidden">
-                <div class="bg-white border border-slate-200/60 rounded-3xl p-4 shadow-md shadow-slate-200/50 flex flex-col h-full min-h-0 overflow-hidden">
-                    <div class="flex items-center justify-between mb-3 flex-shrink-0">
-                        <h2 class="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1.5">
-                            <i data-lucide="users" class="w-4 h-4 text-brand-500"></i> 抽獎名冊
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 lg:overflow-hidden mb-1 overflow-y-auto lg:overflow-y-hidden">
+            
+            <!-- 左側分欄：數據名單庫與獎項清單雙卡片並立 -->
+            <aside class="col-span-1 lg:col-span-3 flex flex-col gap-4 min-h-[350px] lg:min-h-0 lg:h-full overflow-hidden">
+                <!-- 上卡片：抽獎名冊 -->
+                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-[48%] min-h-0 overflow-hidden">
+                    <div class="flex items-center justify-between mb-2 flex-shrink-0 gap-1">
+                        <h2 class="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1 whitespace-nowrap">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-brand-500"></i> 抽獎名冊
                         </h2>
-                        <span id="p-count" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-brand-600 font-bold">0 筆</span>
+                        <button onclick="toggleModal('data-management-modal'); switchDataTab('participants')" class="flex items-center gap-1 px-2 py-0.5 text-[10px] font-black bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 rounded-lg transition-all shadow-sm">
+                            <i data-lucide="plus" class="w-3 h-3"></i> 匯入名冊
+                        </button>
                     </div>
 
-                    <div class="space-y-3 flex-1 flex flex-col min-h-0 overflow-hidden">
-                        <input type="text" id="preview-search" oninput="renderPreviewList()" placeholder="🔍 輸入關鍵字快速搜尋..." class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500/50 focus:bg-white transition-all flex-shrink-0">
+                    <div class="space-y-2 flex-1 flex flex-col min-h-0 overflow-hidden">
+                        <div class="flex items-center justify-between flex-shrink-0 gap-2">
+                            <input type="text" id="preview-search" oninput="renderPreviewList()" placeholder="🔍 搜尋名冊..." class="w-full bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-[11px] text-slate-800 focus:outline-none focus:border-brand-500/50 focus:bg-white transition-all">
+                            <span id="p-count" class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-brand-600 font-bold whitespace-nowrap">0 筆</span>
+                        </div>
                         
                         <!-- 智慧自適應標題欄 -->
                         <div id="preview-header-row" class="flex-shrink-0"></div>
                         
                         <!-- 滾動名冊 -->
-                        <div id="preview-list" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-1">
-                            <div class="text-slate-400 text-center py-6 italic text-xs">暫無載入名單</div>
+                        <div id="preview-list" class="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-0.5">
+                            <div class="text-slate-400 text-center py-4 italic text-[11px]">暫無載入名單</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 下卡片：🎁 獎項清單 -->
+                <div class="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col h-[52%] min-h-0 overflow-hidden">
+                    <div class="flex-shrink-0 mb-2">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <h2 class="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1">
+                                <i data-lucide="gift" class="w-3.5 h-3.5 text-amber-500"></i> 獎項清單
+                            </h2>
+                        </div>
+                        <!-- 產生獎項、表單編輯、文字輸入按鈕組 -->
+                        <div class="grid grid-cols-3 gap-1">
+                            <button onclick="generateDefaultPrizes()" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
+                                🪄 產生獎項
+                            </button>
+                            <button onclick="toggleModal('data-management-modal'); switchDataTab('prizes')" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
+                                📝 表單編輯
+                            </button>
+                            <button onclick="toggleModal('data-management-modal'); switchDataTab('prizes')" class="py-1 text-[10px] font-black bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-md transition-all shadow-sm">
+                                ⌨️ 文字輸入
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 實體獎項點擊清單 (帶有自動進度，虛線點綴) -->
+                    <div id="sidebar-prize-list" class="flex-1 overflow-y-auto space-y-1 no-scrollbar pr-0.5 text-xs font-bold text-slate-700">
+                        <div class="text-slate-400 text-center py-6 italic text-[11px]">暫無獎項設定</div>
                     </div>
                 </div>
             </aside>
 
             <!-- 中間分欄：抽獎核心舞台 -->
-            <section class="col-span-1 lg:col-span-6 flex flex-col min-h-[450px] lg:min-h-0 lg:h-full overflow-hidden" id="capture-stage">
-                <div class="flex-1 bg-white border border-slate-200/60 rounded-[32px] p-6 lg:p-8 shadow-2xl shadow-slate-200/80 flex flex-col items-center justify-between min-h-0 overflow-hidden relative">
-                    <div class="text-center flex-shrink-0">
+            <section class="col-span-1 lg:col-span-6 flex flex-col min-h-[400px] lg:min-h-0 lg:h-full overflow-hidden" id="capture-stage">
+                <div class="flex-1 bg-white border border-slate-200/60 rounded-[28px] p-4 lg:p-5 shadow-xl shadow-slate-200/80 flex flex-col items-center justify-between min-h-0 overflow-hidden relative">
+                    
+                    <!-- 👑 抽獎快捷配置面板 (加入「單品項抽獎」核取方塊與狀態聯動，視覺高對比反黑/反灰) -->
+                    <div class="w-full bg-slate-50 border border-slate-200/60 p-2.5 rounded-xl flex items-center justify-between gap-2.5 flex-shrink-0">
+                        <div class="flex items-center gap-3">
+                            <!-- 單品項抽獎 啟用開關 -->
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="checkbox" id="single-draw-toggle" checked onchange="toggleSingleDrawMode()" class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500 shadow-sm">
+                                <span id="single-draw-label" class="text-xs font-black text-slate-900 uppercase tracking-wider whitespace-nowrap transition-colors">單品項抽獎</span>
+                            </label>
+                            
+                            <!-- 單次人數設定 -->
+                            <div class="flex items-center gap-1.5">
+                                <span id="draw-num-label" class="text-xs font-bold text-slate-600 whitespace-nowrap transition-colors">單次人數</span>
+                                <input type="number" id="draw-num" value="1" min="1" class="w-12 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-center text-slate-800 font-bold focus:outline-none focus:border-brand-500 transition-all shadow-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="h-4 w-px bg-slate-300"></div>
+                        
+                        <!-- 重複中獎過濾 -->
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="dup-check" checked class="w-4 h-4 rounded border-slate-300 bg-white text-brand-500 focus:ring-brand-500 shadow-sm">
+                            <span class="text-xs font-bold text-slate-600 whitespace-nowrap">重複中獎過濾</span>
+                        </label>
+                    </div>
+
+                    <!-- 👑 獎項與徽章區塊設為 hidden 隱藏，不影響 JS 指令且完全釋放中間版面空間 -->
+                    <div class="text-center flex-shrink-0 hidden">
                         <div id="prize-badge" class="inline-block px-3 py-1 bg-brand-50 border border-brand-200 text-brand-600 rounded-full text-[10px] font-black tracking-widest uppercase mb-2">極光抽獎舞台</div>
                         <h2 id="cur-prize-name" class="text-2xl lg:text-3xl font-black text-slate-950 italic">尚未選擇獎項</h2>
                     </div>
 
                     <!-- 抽獎主呈現看板 -->
-                    <div id="marquee-box" class="w-full flex-1 overflow-y-auto no-scrollbar py-4 min-h-0">
+                    <div id="marquee-box" class="w-full flex-1 overflow-y-auto no-scrollbar py-2 min-h-0">
                         <div class="text-slate-400 text-center text-sm font-medium italic mt-12">準備啟動雲端抽獎系統...</div>
                     </div>
 
-                    <!-- 抽獎控制按鈕組合 (精簡水平雙軌控制列) -->
-                    <div class="w-full flex-shrink-0 pt-4 border-t border-slate-100">
-                        <div class="grid grid-cols-2 gap-4">
-                            <button id="draw-btn" onclick="toggleDraw()" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-base lg:text-lg rounded-2xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate">
-                                <i data-lucide="play" class="w-5 h-5 fill-current group-hover:scale-110 transition-transform flex-shrink-0"></i> 
+                    <!-- 抽獎控制按鈕組合 (⚡ 一鍵大抽選正式更名為「一次抽選全部獎項」) -->
+                    <div class="w-full flex-shrink-0 pt-3 border-t border-slate-100">
+                        <div class="grid grid-cols-2 gap-3.5">
+                            <button id="draw-btn" onclick="toggleDraw()" class="w-full py-3 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate">
+                                <i data-lucide="play" class="w-4 h-4 fill-current group-hover:scale-110 transition-transform flex-shrink-0"></i> 
                                 <span id="btn-text" class="truncate">開始抽獎</span>
                             </button>
                             
-                            <!-- ⚡ 一次抽完所有品項 (一鍵大抽選黃金按鈕) -->
-                            <button id="grand-draw-btn" onclick="toggleGrandDraw()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-base lg:text-lg rounded-2xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate">
-                                <i data-lucide="zap" class="w-5 h-5 fill-current text-yellow-200 animate-pulse flex-shrink-0"></i>
-                                <span id="grand-btn-text" class="truncate">⚡ 一鍵大抽選</span>
+                            <!-- ⚡ 一次抽選全部獎項 黃金按鈕 -->
+                            <button id="grand-draw-btn" onclick="toggleGrandDraw()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-sm lg:text-base rounded-xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate">
+                                <i data-lucide="zap" class="w-4 h-4 fill-current text-yellow-200 animate-pulse flex-shrink-0"></i>
+                                <span id="grand-btn-text" class="truncate">⚡ 一次抽選全部獎項</span>
                             </button>
                         </div>
                     </div>
@@ -144,25 +196,86 @@
 
             <!-- 右側分欄：中獎紀錄歷史看板 -->
             <aside class="col-span-1 lg:col-span-3 flex flex-col min-h-[300px] lg:min-h-0 lg:h-full overflow-hidden">
-                <div class="flex-1 bg-white border border-slate-200/60 rounded-3xl p-4 shadow-md shadow-slate-200/50 flex flex-col min-h-0 overflow-hidden">
-                    <div class="flex items-center justify-between mb-3 border-b border-slate-200 pb-3 flex-shrink-0">
-                        <h2 class="text-xs font-black uppercase text-amber-600 tracking-widest flex items-center gap-1.5">
-                            <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i> 中獎紀錄看板
+                <div class="flex-1 bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col min-h-0 overflow-hidden">
+                    <div class="flex items-center justify-between mb-2 border-b border-slate-200 pb-2 flex-shrink-0">
+                        <h2 class="text-xs font-black uppercase text-amber-600 tracking-widest flex items-center gap-1">
+                            <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i> 中獎紀錄看板
                         </h2>
-                        <span id="win-cnt" class="text-xs font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded">0</span>
+                        <span id="win-cnt" class="text-xs font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">0</span>
                     </div>
-                    <div id="win-log" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-1">
+                    <div id="win-log" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-0.5">
                         <!-- 中獎明細 -->
                     </div>
-                    <div class="mt-3 flex-shrink-0">
-                        <button onclick="clearAll()" class="w-full py-2.5 text-xs font-black bg-slate-100 text-slate-600 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all rounded-xl">重置紀錄</button>
+                    <div class="mt-2 flex-shrink-0">
+                        <button onclick="clearAll()" class="w-full py-2 text-xs font-black bg-slate-100 text-slate-600 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all rounded-lg">重置紀錄</button>
                     </div>
                 </div>
             </aside>
         </main>
     </div>
 
-    <!-- 系統設定彈窗 (✅ 寬度自 max-w-lg 放大至 max-w-2xl，內距調整為 p-10 圓角 rounded-[40px]) -->
+    <!-- 手動管理與數據匯入彈窗 -->
+    <div id="data-management-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/30">
+        <div class="bg-white border border-slate-200 rounded-[32px] p-8 max-w-2xl w-full shadow-3xl flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-black mb-4 text-slate-950 uppercase tracking-tighter flex items-center gap-2 flex-shrink-0">
+                <i data-lucide="database" class="w-6 h-6 text-brand-500"></i> 手動匯入與自訂鍵入
+            </h3>
+            
+            <!-- 雙頁籤切換按鈕 -->
+            <div class="flex border-b border-slate-200 mb-4 flex-shrink-0">
+                <button onclick="switchDataTab('participants')" id="tab-btn-participants" class="flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all">👥 參加名冊管理</button>
+                <button onclick="switchDataTab('prizes')" id="tab-btn-prizes" class="flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all">🎁 獎項內容管理</button>
+            </div>
+
+            <!-- 參加名冊管理內容 -->
+            <div id="tab-content-participants" class="space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto">
+                <!-- 智慧拖曳讀取檔案上傳區 -->
+                <div id="drop-zone-participants" class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-slate-50/50 hover:bg-slate-50/20 p-5 rounded-2xl text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group flex-shrink-0 shadow-inner">
+                    <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                    <span class="text-xs font-black text-slate-700">拖曳 Excel / CSV / TXT 檔案至此，或 <span class="text-brand-600 hover:underline">點此瀏覽檔案</span></span>
+                    <span class="text-[10px] text-slate-400">支援解析欄位：姓名、身分證字號、聯絡資訊、發票號碼、權重</span>
+                    <input type="file" id="file-input-participants" class="hidden" accept=".xlsx,.xls,.csv,.txt">
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">或直接鍵入</span>
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                </div>
+
+                <textarea id="manual-participants-text" placeholder="林宥嘉   A123456789   0912345678   FA12345678   1&#10;陳美蓉   B987654321   0987654321   FA87654321   2" class="w-full flex-1 min-h-[120px] bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-mono focus:outline-none focus:bg-white focus:border-brand-500 transition-all focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
+                <div class="flex justify-end gap-3 flex-shrink-0">
+                    <button onclick="toggleModal('data-management-modal')" class="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition-all">取消</button>
+                    <button onclick="importParticipantsManually()" class="py-2.5 px-6 bg-brand-600 hover:bg-brand-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-brand-500/10">📥 解析並匯入名冊</button>
+                </div>
+            </div>
+
+            <!-- 獎項內容管理內容 -->
+            <div id="tab-content-prizes" class="space-y-4 flex-1 flex flex-col min-h-0 hidden overflow-y-auto">
+                <!-- 智慧拖曳讀取檔案上傳區 -->
+                <div id="drop-zone-prizes" class="border-2 border-dashed border-slate-200 hover:border-amber-500 bg-slate-50/50 hover:bg-slate-50/20 p-5 rounded-2xl text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group flex-shrink-0 shadow-inner">
+                    <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-400 group-hover:text-amber-500 transition-colors"></i>
+                    <span class="text-xs font-black text-slate-700">拖曳 獎項清單檔案 至此，或 <span class="text-amber-600 hover:underline">點此瀏覽檔案</span></span>
+                    <span class="text-[10px] text-slate-400">格式範例：Apple AirPods Pro 3 ...... 1名  (或是 獎項名稱, 數量 結構)</span>
+                    <input type="file" id="file-input-prizes" class="hidden" accept=".xlsx,.xls,.csv,.txt">
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">或直接鍵入</span>
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                </div>
+
+                <textarea id="manual-prizes-text" placeholder="Apple AirPods Pro 3 ...... 1名&#10;HERAN無線手持吸塵器 ...... 2名&#10;Panasonic 12吋立扇 ...... 2名&#10;Shine Trip 坦途露營車 ...... 3名&#10;COTD保溫杯 ...... 5名" class="w-full flex-1 min-h-[120px] bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-mono focus:outline-none focus:bg-white focus:border-brand-500 transition-all focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
+                <div class="flex justify-end gap-3 flex-shrink-0">
+                    <button onclick="toggleModal('data-management-modal')" class="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition-all">取消</button>
+                    <button onclick="importPrizesManually()" class="py-2.5 px-6 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-amber-500/10">📥 解析並匯入獎項清單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系統設定彈窗 -->
     <div id="settings-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/30">
         <div class="bg-white border border-slate-200 rounded-[40px] p-10 max-w-2xl w-full shadow-3xl">
             <h3 class="text-2xl font-black mb-5 text-slate-950 uppercase tracking-tighter flex items-center gap-2">
@@ -206,11 +319,11 @@
                         
                         <!-- 次要降維設定 -->
                         <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all select-none shadow-sm">
-                            <input type="checkbox" id="raw-weight-check" checked class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
+                            <input type="checkbox" id="raw-weight-check" class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
                             <span class="text-[11px] font-bold text-slate-500">使用原始數值為權重</span>
                         </label>
                         <label class="flex items-center gap-2.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all select-none shadow-sm">
-                            <input type="checkbox" id="power-weight-check" checked class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
+                            <input type="checkbox" id="power-weight-check" class="w-4 h-4 rounded border-slate-200 bg-white text-brand-500 focus:ring-brand-500">
                             <span class="text-[11px] font-bold text-slate-500">啟用權重二次方極限放大</span>
                         </label>
                     </div>
@@ -240,7 +353,6 @@
     </div>
 
     <script>
-        // --- 離線音效合成引擎 ---
         const audio = {
             ctx: null,
             init() {
@@ -289,7 +401,6 @@
             }
         };
 
-        // --- 訊息提示引擎 ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if(!container) return;
@@ -320,7 +431,6 @@
             }, 4000);
         }
 
-        // --- 隱私遮蔽引擎 ---
         const mask = {
             name: (s) => {
                 if(!s) return '***';
@@ -342,7 +452,6 @@
             }
         };
 
-        // --- App 狀態 ---
         let app = {
             participants: [],
             prizes: [],
@@ -376,10 +485,24 @@
             document.getElementById('sound-check').checked = localStorage.getItem('cfg_sound') !== 'false';
             document.getElementById('serial-number-check').checked = localStorage.getItem('cfg_serial') !== 'false';
             
-            // 👑 預設啟用核心方案 B 以及對應的權重直抽放大設置
+            // 👑 預設啟用核心方案 B
             document.getElementById('option-b-check').checked = localStorage.getItem('cfg_option_b') !== 'false';
-            document.getElementById('raw-weight-check').checked = localStorage.getItem('cfg_raw_weight') !== 'false';
-            document.getElementById('power-weight-check').checked = localStorage.getItem('cfg_power_weight') !== 'false';
+            
+            // 👑 載入邏輯：如果 LocalStorage 沒有設定，預設為 false 不勾選，完美相容您的設定截圖
+            document.getElementById('raw-weight-check').checked = localStorage.getItem('cfg_raw_weight') === 'true';
+            document.getElementById('power-weight-check').checked = localStorage.getItem('cfg_power_weight') === 'true';
+
+            // 👑 讀取自訂抽獎主題
+            const savedTheme = localStorage.getItem('aurora_v2_theme');
+            if (savedTheme) {
+                document.getElementById('raffle-theme-input').value = savedTheme;
+            }
+
+            // 初始化檔案拖曳直讀與點選監聽
+            initFileDragAndDrop();
+
+            // 初始化「單品項抽獎」模式切換
+            toggleSingleDrawMode();
 
             if(app.gasUrl) syncGas(true);
             const saved = localStorage.getItem('aurora_v2_winners');
@@ -389,7 +512,7 @@
             window.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
                     e.preventDefault();
-                    if (!app.drawing && !app.grandDrawing) {
+                    if (document.getElementById('single-draw-toggle').checked && !app.drawing && !app.grandDrawing) {
                         toggleDraw();
                     }
                 }
@@ -398,7 +521,40 @@
 
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
-        // --- 儲存設定 ---
+        function toggleSingleDrawMode() {
+            const isChecked = document.getElementById('single-draw-toggle').checked;
+            const singleLabel = document.getElementById('single-draw-label');
+            const numLabel = document.getElementById('draw-num-label');
+            const numInput = document.getElementById('draw-num');
+            const drawBtn = document.getElementById('draw-btn');
+
+            if (isChecked) {
+                // 啟用狀態 (反粗黑)
+                singleLabel.className = "text-xs font-black text-slate-900 uppercase tracking-wider whitespace-nowrap transition-colors";
+                numLabel.className = "text-xs font-bold text-slate-600 whitespace-nowrap transition-colors";
+                numInput.disabled = false;
+                numInput.className = "w-14 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-brand-500 transition-all shadow-sm";
+
+                // 還原按鈕狀態
+                if (!app.drawing && !app.grandDrawing) {
+                    drawBtn.disabled = false;
+                    drawBtn.className = "w-full py-3 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-sm lg:text-base rounded-xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate";
+                }
+            } else {
+                // 禁用狀態 (反灰)
+                singleLabel.className = "text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap transition-colors";
+                numLabel.className = "text-xs font-medium text-slate-400 whitespace-nowrap transition-colors";
+                numInput.disabled = true;
+                numInput.className = "w-14 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 font-bold transition-all shadow-sm cursor-not-allowed";
+
+                // 鎖定單品按鈕
+                if (!app.drawing && !app.grandDrawing) {
+                    drawBtn.disabled = true;
+                    drawBtn.className = "w-full py-3 bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm lg:text-base rounded-xl cursor-not-allowed flex items-center justify-center gap-2 truncate opacity-50";
+                }
+            }
+        }
+
         function saveSettings() {
             localStorage.setItem('cfg_cross_exclude', document.getElementById('cross-exclude-check').checked);
             localStorage.setItem('cfg_fast_mode', document.getElementById('fast-mode-check').checked);
@@ -418,7 +574,252 @@
             showToast('進階規則與配置已成功儲存！', 'success');
         }
 
-        // --- 錄影授權 ---
+        function updateThemeTitle() {
+            const val = document.getElementById('raffle-theme-input').value;
+            localStorage.setItem('aurora_v2_theme', val);
+        }
+
+        function initFileDragAndDrop() {
+            const setupZone = (zoneId, inputId, type) => {
+                const zone = document.getElementById(zoneId);
+                const input = document.getElementById(inputId);
+                if (!zone || !input) return;
+
+                zone.addEventListener('click', () => input.click());
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    handleFileSelect(file, type);
+                });
+
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('border-brand-500', 'bg-brand-50/10');
+                });
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('border-brand-500', 'bg-brand-50/10');
+                });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('border-brand-500', 'bg-brand-50/10');
+                    const file = e.dataTransfer.files[0];
+                    handleFileSelect(file, type);
+                });
+            };
+
+            setupZone('drop-zone-participants', 'file-input-participants', 'participants');
+            setupZone('drop-zone-prizes', 'file-input-prizes', 'prizes');
+        }
+
+        function handleFileSelect(file, type) {
+            if (!file) return;
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.txt')) {
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    if (type === 'participants') {
+                        document.getElementById('manual-participants-text').value = text;
+                        importParticipantsManually();
+                    } else {
+                        document.getElementById('manual-prizes-text').value = text;
+                        importPrizesManually();
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            } else {
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const textLines = json.map(row => row.join('\t')).join('\n');
+                        
+                        if (type === 'participants') {
+                            document.getElementById('manual-participants-text').value = textLines;
+                            importParticipantsManually();
+                        } else {
+                            document.getElementById('manual-prizes-text').value = textLines;
+                            importPrizesManually();
+                        }
+                    } catch (err) {
+                        showToast('檔案格式讀取失敗，請確認是否為標準 Excel 檔案！', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function generateDefaultPrizes() {
+            const defaultText = `Apple AirPods Pro 3 ...... 1名
+HERAN無線手持吸塵器 ...... 2名
+Panasonic 12吋立扇 ...... 2名
+Shine Trip 坦途露營車 ...... 3名
+COTD保溫杯 ...... 5名
+A Plastic Project環保吸吸管 ...... 5名
+環保綠點30,000點 ...... 5名`;
+            document.getElementById('manual-prizes-text').value = defaultText;
+            importPrizesManually();
+            showToast('已成功產生預設獎項！', 'success');
+        }
+
+        function renderSidebarPrizeList() {
+            const container = document.getElementById('sidebar-prize-list');
+            if(!container) return;
+            if(!app.prizes || app.prizes.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-center py-6 italic text-[11px]">暫無獎項設定</div>`;
+                return;
+            }
+            container.innerHTML = app.prizes.map(p => {
+                const remaining = p.count - p.drawnCount;
+                const isDrawnOut = remaining <= 0;
+                const isActive = app.prize && app.prize.id === p.id;
+                
+                const activeClass = isActive ? 'bg-amber-50 border-amber-300 text-amber-900 shadow-sm' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 text-slate-700';
+                const opacityClass = isDrawnOut ? 'opacity-40 line-through' : '';
+                const statusBadge = isDrawnOut 
+                    ? `<span class="bg-slate-200 text-slate-500 text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">已抽完</span>`
+                    : `<span class="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">剩 ${remaining} 名</span>`;
+                
+                return `
+                    <div onclick="selectPrizeById('${p.id}')" class="p-2 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${activeClass} ${opacityClass} mb-1">
+                        <div class="flex-1 min-w-0 flex items-center justify-between">
+                            <span class="truncate pr-1">${p.name}</span>
+                            <span class="text-slate-300 font-normal px-1">......</span>
+                            <span class="whitespace-nowrap font-black">${p.count}名</span>
+                        </div>
+                        <div class="ml-2 flex-shrink-0">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectPrizeById(id) {
+            document.getElementById('prize-sel').value = id;
+            syncUI();
+            renderSidebarPrizeList();
+        }
+
+        function importParticipantsManually() {
+            const rawText = document.getElementById('manual-participants-text').value.trim();
+            if(!rawText) {
+                showToast('請輸入名冊數據！', 'error');
+                return;
+            }
+            const lines = rawText.split('\n');
+            const parsed = [];
+            
+            lines.forEach((line, idx) => {
+                const cleanLine = line.trim();
+                if(!cleanLine) return;
+                
+                let parts = cleanLine.split('\t');
+                if (parts.length === 1) {
+                    parts = cleanLine.split(/[ ,，]+/);
+                }
+                parts = parts.map(p => p.trim()).filter(Boolean);
+                
+                if (parts.length > 0) {
+                    parsed.push({
+                        name: parts[0] || `手動參賽者_${idx + 1}`,
+                        idNum: parts[1] || "",
+                        phone: parts[2] || "",
+                        invoice: parts[3] || parts[2] || "", 
+                        weight: Number(parts[5]) || Number(parts[parts.length - 1]) || 1, 
+                        note: ""
+                    });
+                }
+            });
+            
+            if (parsed.length > 0) {
+                app.participants = parsed;
+                app.activeFields = {
+                    name: true,
+                    idNum: app.participants.some(p => p.idNum && p.idNum.toString().trim() !== ""),
+                    invoice: app.participants.some(p => p.invoice && p.invoice.toString().trim() !== "")
+                };
+                app.activeColumnCount = Object.values(app.activeFields).filter(Boolean).length;
+
+                findRawBounds();
+                document.getElementById('p-count').innerText = `${app.participants.length} 筆`;
+                renderPreviewList();
+                showToast(`已成功手動匯入 ${parsed.length} 筆名單！`, 'success');
+                if (document.getElementById('data-management-modal').classList.contains('hidden') === false) {
+                    toggleModal('data-management-modal');
+                }
+            } else {
+                showToast('無法解析有效名冊，請確認格式！', 'error');
+            }
+        }
+
+        function importPrizesManually() {
+            const rawText = document.getElementById('manual-prizes-text').value.trim();
+            if(!rawText) {
+                showToast('請輸入獎項設定！', 'error');
+                return;
+            }
+            const lines = rawText.split('\n');
+            const parsed = [];
+            
+            lines.forEach((line, idx) => {
+                const cleanLine = line.trim();
+                if(!cleanLine) return;
+                
+                let prizeName = "";
+                let count = 1;
+                
+                if (cleanLine.includes('......')) {
+                    const parts = cleanLine.split('......');
+                    prizeName = parts[0].trim();
+                    const numMatch = parts[1].match(/\d+/);
+                    count = numMatch ? parseInt(numMatch[0]) : 1;
+                } else {
+                    const lastSpaceIndex = cleanLine.lastIndexOf(' ');
+                    const lastCommaIndex = cleanLine.lastIndexOf(',');
+                    const lastIndex = Math.max(lastSpaceIndex, lastCommaIndex);
+                    
+                    if (lastIndex !== -1) {
+                        prizeName = cleanLine.substring(0, lastIndex).trim();
+                        const rightPart = cleanLine.substring(lastIndex + 1).trim();
+                        const numMatch = rightPart.match(/\d+/);
+                        count = numMatch ? parseInt(numMatch[0]) : 1;
+                        
+                        if (!prizeName) {
+                            prizeName = cleanLine;
+                            count = 1;
+                        }
+                    } else {
+                        prizeName = cleanLine;
+                        count = 1;
+                    }
+                }
+                
+                if (prizeName) {
+                    parsed.push({
+                        id: (idx + 1).toString(),
+                        name: prizeName,
+                        count: count,
+                        drawnCount: 0
+                    });
+                }
+            });
+            
+            if (parsed.length > 0) {
+                app.prizes = parsed;
+                updatePrizeUI();
+                renderSidebarPrizeList();
+                showToast(`已成功手動配置 ${parsed.length} 項獎項清單！`, 'success');
+                if (document.getElementById('data-management-modal').classList.contains('hidden') === false) {
+                    toggleModal('data-management-modal');
+                }
+            } else {
+                showToast('無法解析有效獎項設定！', 'error');
+            }
+        }
+
         async function authorizeRecording() {
             try {
                 app.stream = await navigator.mediaDevices.getDisplayMedia({
@@ -440,22 +841,25 @@
             }
         }
 
-        function updateRecordUI(ok) {
-            const btn = document.getElementById('record-auth-btn');
-            const dot = document.getElementById('record-dot');
-            const text = document.getElementById('record-text');
-            if (ok) {
-                btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 text-xs font-bold text-emerald-600 transition-all shadow-sm";
-                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-                text.innerText = "自動錄影中";
+        function switchDataTab(type) {
+            const pTab = document.getElementById('tab-content-participants');
+            const prTab = document.getElementById('tab-content-prizes');
+            const pBtn = document.getElementById('tab-btn-participants');
+            const prBtn = document.getElementById('tab-btn-prizes');
+            
+            if (type === 'participants') {
+                pTab.classList.remove('hidden');
+                prTab.classList.add('hidden');
+                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
+                prBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
             } else {
-                btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 transition-all shadow-sm";
-                dot.className = "w-2 h-2 rounded-full bg-rose-500";
-                text.innerText = "授權錄影";
+                pTab.classList.add('hidden');
+                prTab.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-brand-500 text-brand-600 transition-all";
+                pBtn.className = "flex-1 py-2.5 text-xs font-black text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all";
+                prTab.classList.remove('hidden');
             }
         }
 
-        // --- 尋找原始權重極端邊界 ---
         function findRawBounds() {
             if (!app.participants.length) return;
             const weights = app.participants.map(p => Number(p.weight) || 1);
@@ -466,7 +870,6 @@
             }
         }
 
-        // --- 智慧線性映射與次方級放大公式 ---
         function getRescaledWeight(participant, prizeMin, prizeMax) {
             const rawVal = Number(participant.weight) || 1;
             const useRaw = document.getElementById('raw-weight-check').checked;
@@ -484,7 +887,6 @@
             return Number(weight.toFixed(4));
         }
 
-        // --- 智慧名單預覽渲染 ---
         function renderPreviewList() {
             const list = document.getElementById('preview-list');
             const header = document.getElementById('preview-header-row');
@@ -542,6 +944,7 @@
 
                     findRawBounds();
                     updatePrizeUI();
+                    renderSidebarPrizeList();
                     updateStatus(true);
                     document.getElementById('p-count').innerText = `${app.participants.length} 筆`;
                     
@@ -556,8 +959,8 @@
 
         function updateStatus(ok) {
             const el = document.getElementById('conn-status');
-            el.innerHTML = ok ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 已連線至雲端` : `<span class="w-2 h-2 rounded-full bg-rose-500"></span> 連線中斷`;
-            el.className = ok ? "px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 text-xs font-bold text-emerald-600 shadow-sm" : "px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-1.5 text-xs font-bold text-slate-600 shadow-sm";
+            el.innerHTML = ok ? `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 已連線至雲端` : `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 連線中斷`;
+            el.className = ok ? "px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 shadow-sm" : "px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 flex items-center gap-1.5 text-[11px] font-bold text-slate-600 shadow-sm";
         }
 
         function updatePrizeUI() {
@@ -596,17 +999,14 @@
             }
         }
 
-        // --- 方案 A 核心分頁輪播與動態定格引擎 ---
         function startPaginationRender(winners, isGrandDraw, onComplete) {
             const isFastMode = document.getElementById('fast-mode-check').checked;
-            const pageDisplayTime = 3000; // 每頁定格 3 秒
+            const pageDisplayTime = 3000; 
             
-            // 智慧分頁：大於等於 30 人每頁 10 人（雙列），其餘每頁 3 人（單列，確保中低解析度完全無損不溢出）
             const itemsPerPage = (winners.length >= 30) ? 10 : 3;
             const totalPages = Math.ceil(winners.length / itemsPerPage);
             
             if (isFastMode) {
-                // 快速模式：一鍵全屏
                 renderPage(winners, 0, winners.length, isGrandDraw, 1, 1);
                 setTimeout(() => {
                     onComplete();
@@ -634,26 +1034,18 @@
             }, totalDelay);
         }
 
-        // 渲染指定分頁畫面
         function renderPage(winners, pageIndex, itemsPerPage, isGrandDraw, pageNum, totalPages) {
             const box = document.getElementById('marquee-box');
-            
-            // 👑 【黃金核心修復】1. 強制重置滾動位置為 0，徹底終結瀏覽器保留上一頁 scrollTop 造成的切頂與破圖 Bug！
             box.scrollTop = 0;
-            
-            // 👑 【黃金核心修復】2. 強制在錄影存證展示階段關閉 overflow-y，確保影片乾淨無滾動條！
             box.style.overflowY = 'hidden'; 
             
             const showInvoice = app.activeFields.invoice;
-            
-            // 決定欄位寬度
             let colsCount = isGrandDraw ? (showInvoice ? 4 : 3) : app.activeColumnCount;
             const gridClass = `grid grid-cols-${colsCount} gap-2`;
             
-            // 👑 縮小表頭間距 py-2 與 mb-2.5，為下方卡片釋放黃金高度空間
             let headerHtml = `
             <div class="flex justify-between items-center bg-amber-50 px-4 py-2 border border-amber-200 rounded-xl mb-2.5 shadow-sm select-none">
-                <span class="text-xs font-black text-amber-800 uppercase tracking-widest">📋 一鍵大抽選存證畫面 - 第 ${pageNum} / ${totalPages} 頁</span>
+                <span class="text-xs font-black text-amber-800 uppercase tracking-widest">📋 一次抽選全部獎項存證畫面 - 第 ${pageNum} / ${totalPages} 頁</span>
                 <span class="text-[10px] font-mono font-black bg-amber-600 text-white px-2 py-0.5 rounded-full">頁數: ${pageNum} / ${totalPages}</span>
             </div>
             <div class="${gridClass} px-4 py-2.5 bg-amber-100/50 border border-amber-200 rounded-xl text-[10px] font-black uppercase text-amber-700 tracking-wider shadow-sm">
@@ -671,22 +1063,16 @@
             }
             headerHtml += `</div>`;
 
-            // 取得該頁得獎人
             const startIdx = pageIndex * itemsPerPage;
             const endIdx = Math.min(startIdx + itemsPerPage, winners.length);
             const pageWinners = winners.slice(startIdx, endIdx);
 
             const isDoubleColumn = (itemsPerPage === 10);
-            
-            // 👑 縮小間距：單列卡片間距改為 gap-2.5，釋放垂直高度防止溢出
             const listContainerClass = isDoubleColumn ? "grid grid-cols-2 gap-2" : "flex flex-col gap-2";
-
             const isSerialNumEnabled = document.getElementById('serial-number-check').checked;
 
             const listHtml = pageWinners.map((w, idx) => {
                 const absoluteIndex = startIdx + idx;
-                
-                // 👑 【黃金核心修復】3. 重新定製卡片內距、字體級距，大幅收縮垂直高度，徹底防止溢出
                 const cardPadding = isDoubleColumn ? "p-2.5 rounded-xl" : "py-3.5 px-5 rounded-2xl";
                 const nameSize = isDoubleColumn ? "text-lg" : "text-2xl lg:text-3xl";
                 const infoSize = isDoubleColumn ? "text-xs font-mono" : "text-sm md:text-base font-mono";
@@ -742,8 +1128,10 @@
             `;
         }
 
-        // --- 單品項抽獎流程 ---
         function toggleDraw() {
+            // 若未勾選單品項抽獎，則鎖定此功能直接返回
+            if (!document.getElementById('single-draw-toggle').checked) return;
+
             if(app.drawing) {
                 stopDraw();
             } else {
@@ -815,7 +1203,6 @@
                 return;
             }
 
-            // 計算方案 A 動態延遲
             const itemsPerPage = (winners.length >= 30) ? 10 : 5;
             const totalPages = Math.ceil(winners.length / itemsPerPage);
             const totalDelaySeconds = (((totalPages * 3000) + 1500) / 1000).toFixed(1);
@@ -827,14 +1214,13 @@
             const time = new Date().toLocaleString();
             winners.forEach(w => app.winners.unshift({ ...w, prizeName: app.prize.name, time }));
 
-            // 觸發音效與彩帶
             audio.playTada();
             saveRecords();
             renderWinners();
             app.prize.drawnCount += winners.length;
             syncUI();
+            renderSidebarPrizeList();
 
-            // 啟動方案 A 智慧分頁渲染引擎
             startPaginationRender(winners, false, () => {
                 restoreButtons();
                 if (app.mediaRecorder && app.mediaRecorder.state !== 'inactive') {
@@ -855,7 +1241,6 @@
             });
         }
 
-        // --- 一鍵大抽選：一次抽完全部品項 (Grand Draw) ---
         function toggleGrandDraw() {
             if (app.grandDrawing) return;
             app.isGrandDrawMode = true;
@@ -878,7 +1263,7 @@
             btn.className = "w-full py-3.5 bg-slate-100 text-slate-400 font-black text-base lg:text-lg rounded-2xl cursor-not-allowed flex items-center justify-center gap-2 transition-all truncate";
             gBtn.className = "w-full py-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-base lg:text-lg rounded-2xl cursor-wait flex items-center justify-center gap-2 animate-pulse truncate";
             
-            document.getElementById('grand-btn-text').innerText = "⚡ 大抽選中...";
+            document.getElementById('grand-btn-text').innerText = "⚡ 一次抽選全部獎項中...";
 
             const box = document.getElementById('marquee-box');
             box.innerHTML = '';
@@ -896,7 +1281,7 @@
                 const rollTimer = setInterval(() => {
                     audio.playTick();
                     const p = app.participants[Math.floor(Math.random() * app.participants.length)];
-                    previewCard.innerHTML = `<span class="font-black text-amber-600 text-lg tracking-wider">⚡ 正在批次大抽選中: ${mask.name(p.name)} ...</span>`;
+                    previewCard.innerHTML = `<span class="font-black text-amber-600 text-lg tracking-wider">⚡ 正在一次抽選全部獎項中: ${mask.name(p.name)} ...</span>`;
                     rollCount++;
                     if (rollCount >= 35) {
                         clearInterval(rollTimer);
@@ -906,12 +1291,10 @@
             }
         }
 
-        // --- 一鍵大抽選核心計算：方案 B 硬性權重優先級排序 ---
         function executeGrandDrawCore() {
             let pool = [...app.participants];
             let activePrizes = [...app.prizes].filter(p => p.count - p.drawnCount > 0);
 
-            // 🏆 跨獎項排除過濾
             const isCrossExclude = document.getElementById('cross-exclude-check').checked;
             if (isCrossExclude && app.winners.length > 0) {
                 const wonIdNums = app.winners.map(w => w.idNum).filter(Boolean);
@@ -925,16 +1308,14 @@
             const useOptionB = document.getElementById('option-b-check').checked;
 
             if (useOptionB) {
-                // 🔒 方案 B 核心：硬性權重排序 + 同分隨機亂數破局
                 pool.forEach(p => p.rand = Math.random());
                 pool.sort((a, b) => {
                     const wA = Number(a.weight) || 1;
                     const wB = Number(b.weight) || 1;
-                    if (wB !== wA) return wB - wA; // 高權重絕對優先
-                    return b.rand - a.rand;       // 同權重隨機破局
+                    if (wB !== wA) return wB - wA; 
+                    return b.rand - a.rand;       
                 });
 
-                // 按試算表從上到下（大獎 ➔ 小獎）的優先權依序配發
                 activePrizes.forEach(prize => {
                     let rQuota = prize.count - prize.drawnCount;
                     if (pool.length === 0) return;
@@ -950,7 +1331,6 @@
                     });
                 });
             } else {
-                // 備用方案 A：舊有遞減加權輪盤映射
                 activePrizes.forEach(prize => {
                     let rQuota = prize.count - prize.drawnCount;
                     for (let k = 0; k < rQuota; k++) {
@@ -986,7 +1366,6 @@
                 });
             }
 
-            // 更新配額與紀錄
             allWinners.forEach(w => {
                 app.winners.unshift(w);
                 const originalPrize = app.prizes.find(p => p.id == w.prizeId);
@@ -997,8 +1376,8 @@
             saveRecords();
             renderWinners();
             syncUI();
+            renderSidebarPrizeList();
 
-            // 方案 A 一鍵大抽選智慧定格翻頁計時
             const itemsPerPage = (allWinners.length >= 30) ? 10 : 5;
             const totalPages = Math.ceil(allWinners.length / itemsPerPage);
             const totalDelaySeconds = (((totalPages * 3000) + 1500) / 1000).toFixed(1);
@@ -1028,25 +1407,23 @@
             });
         }
 
-        // --- 還原控制按鈕 ---
         function restoreButtons() {
             const btn = document.getElementById('draw-btn');
             const gBtn = document.getElementById('grand-draw-btn');
-            btn.disabled = false;
+            
             gBtn.disabled = false;
-            
-            btn.className = "w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-800 hover:from-brand-500 hover:to-brand-700 text-white font-black text-base lg:text-lg rounded-2xl shadow-lg shadow-brand-900/15 transition-all flex items-center justify-center gap-2 group truncate";
-            gBtn.className = "w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-base lg:text-lg rounded-2xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate";
-            
+            gBtn.className = "w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-black text-sm lg:text-base rounded-xl shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 group truncate";
+            document.getElementById('grand-btn-text').innerText = "⚡ 一次抽選全部獎項";
+
             document.getElementById('btn-text').innerText = "開始抽獎";
-            document.getElementById('grand-btn-text').innerText = "⚡ 一鍵大抽選";
+            
+            // 根據單品抽獎 toggle 的當前勾選狀態，還原開始抽獎按鈕的禁用狀態與外觀
+            toggleSingleDrawMode();
         }
 
-        // --- 篩選符合條件的中獎者 ---
         function pickWinners(count, prize) {
             let pool = [...app.participants];
             
-            // 跨獎項歷史排除
             const isCrossExclude = document.getElementById('cross-exclude-check').checked;
             if (isCrossExclude && app.winners.length > 0) {
                 const wonIdNums = app.winners.map(w => w.idNum).filter(Boolean);
@@ -1054,16 +1431,13 @@
                 pool = pool.filter(p => !wonIdNums.includes(p.idNum) && !wonNames.includes(p.name));
             }
 
-            // 本輪重複過濾 (✅ 智慧降維：防堵發票號碼空白時的重複得獎漏洞)
             if(document.getElementById('dup-check').checked) {
                 pool = pool.filter(p => {
-                    // 如果參賽者有填寫發票號碼，進行發票號碼比對
                     if (p.invoice && p.invoice.toString().trim() !== "") {
                         const wonInvoices = app.winners.map(w => w.invoice).filter(Boolean);
                         return !wonInvoices.includes(p.invoice);
                     }
                     
-                    // 如果發票號碼為空白，則智慧降維改用「身分證」與「姓名」作為防重複判定
                     const isWonBefore = app.winners.some(w => 
                         (p.idNum && w.idNum === p.idNum) || 
                         (p.name && w.name === p.name)
@@ -1077,7 +1451,6 @@
             const useOptionB = document.getElementById('option-b-check').checked;
 
             if (useOptionB) {
-                // 🔒 方案 B 核心：硬性權重排序 + 同分隨機亂數破局法
                 pool.forEach(p => p.rand = Math.random());
                 pool.sort((a, b) => {
                     const wA = Number(a.weight) || 1;
@@ -1087,7 +1460,6 @@
                 });
                 return pool.slice(0, Math.min(count, pool.length));
             } else {
-                // 備用方案 A：加權隨機輪盤機率映射
                 const currentM = app.prizes.reduce((sum, pr) => sum + Math.max(0, pr.count - pr.drawnCount), 0);
                 const prizeMin = 1;
                 const prizeMax = currentM > 1 ? currentM : 2;
@@ -1117,7 +1489,6 @@
 
         function saveRecords() { localStorage.setItem('aurora_v2_winners', JSON.stringify(app.winners)); }
 
-        // --- 歷史紀錄渲染 ---
         function renderWinners() {
             const list = document.getElementById('win-log');
             document.getElementById('win-cnt').innerText = app.winners.length;
@@ -1139,7 +1510,6 @@
             }).join('');
         }
 
-        // --- 清空與重置 ---
         function clearAll() { document.getElementById('confirm-clear-modal').classList.remove('hidden'); }
         function closeConfirmModal() { document.getElementById('confirm-clear-modal').classList.add('hidden'); }
 
@@ -1158,6 +1528,7 @@
             if (app.prizes) {
                 app.prizes.forEach(p => p.drawnCount = 0);
                 updatePrizeUI();
+                renderSidebarPrizeList();
             }
             closeConfirmModal();
             
@@ -1183,7 +1554,7 @@
                     mode: 'no-cors',
                     body: JSON.stringify({ 
                         prizeId: isGrandDraw ? null : app.prize.id, 
-                        prizeName: isGrandDraw ? "一鍵大抽選" : app.prize.name,
+                        prizeName: isGrandDraw ? "一次抽選全部獎項" : app.prize.name,
                         isGrandDraw: isGrandDraw,
                         winners: winners.map(w => ({ ...w, time })),
                         videoBase64: videoBase64 
